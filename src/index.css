@@ -1,0 +1,326 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Nexus Space Theme */
+    --background: 230 25% 5%;
+    --foreground: 180 100% 90%;
+
+    --card: 230 30% 8%;
+    --card-foreground: 180 100% 90%;
+
+    --popover: 230 30% 10%;
+    --popover-foreground: 180 100% 90%;
+
+    --primary: 180 100% 50%;
+    --primary-foreground: 230 25% 5%;
+
+    --secondary: 320 100% 60%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 230 20% 15%;
+    --muted-foreground: 180 30% 60%;
+
+    --accent: 35 100% 55%;
+    --accent-foreground: 230 25% 5%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 180 50% 20%;
+    --input: 230 30% 15%;
+    --ring: 180 100% 50%;
+
+    --radius: 0.5rem;
+
+    /* Custom Nexus Colors */
+    --nexus-cyan: 180 100% 50%;
+    --nexus-magenta: 320 100% 60%;
+    --nexus-orange: 35 100% 55%;
+    --nexus-purple: 270 80% 50%;
+    --nexus-green: 150 100% 45%;
+    --nexus-deep: 230 40% 3%;
+    --nexus-glow: 180 100% 70%;
+
+    /* Gradients */
+    --gradient-space: linear-gradient(135deg, hsl(230 40% 3%) 0%, hsl(270 50% 8%) 50%, hsl(230 40% 5%) 100%);
+    --gradient-neon: linear-gradient(90deg, hsl(180 100% 50%) 0%, hsl(320 100% 60%) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(230 30% 15%) 0%, hsl(230 40% 10%) 100%);
+  }
+
+  .dark {
+    --background: 230 25% 5%;
+    --foreground: 180 100% 90%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Orbitron', sans-serif;
+    overflow: hidden;
+  }
+
+  .font-pixel {
+    font-family: 'Press Start 2P', cursive;
+  }
+}
+
+@layer components {
+  /* VHS Effect Overlay */
+  .vhs-overlay {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.1) 0px,
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+    animation: vhs-flicker 0.1s infinite;
+  }
+
+  .vhs-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 255, 255, 0.03) 50%,
+      transparent 100%
+    );
+    animation: vhs-scan 8s linear infinite;
+  }
+
+  /* Scanlines */
+  .scanlines {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 1px,
+      rgba(0, 0, 0, 0.3) 1px,
+      rgba(0, 0, 0, 0.3) 2px
+    );
+  }
+
+  /* Neon Glow Text */
+  .neon-text {
+    text-shadow: 
+      0 0 5px hsl(var(--primary)),
+      0 0 10px hsl(var(--primary)),
+      0 0 20px hsl(var(--primary)),
+      0 0 40px hsl(var(--primary));
+  }
+
+  .neon-text-magenta {
+    text-shadow: 
+      0 0 5px hsl(var(--secondary)),
+      0 0 10px hsl(var(--secondary)),
+      0 0 20px hsl(var(--secondary)),
+      0 0 40px hsl(var(--secondary));
+  }
+
+  /* Neon Button */
+  .neon-button {
+    @apply relative px-8 py-4 font-pixel text-sm uppercase tracking-wider;
+    @apply bg-gradient-to-b from-muted to-card;
+    @apply border-2 border-primary text-primary;
+    @apply transition-all duration-300;
+    box-shadow: 
+      0 0 10px hsl(var(--primary) / 0.3),
+      inset 0 0 20px hsl(var(--primary) / 0.1);
+  }
+
+  .neon-button:hover {
+    @apply bg-primary text-primary-foreground;
+    box-shadow: 
+      0 0 20px hsl(var(--primary) / 0.6),
+      0 0 40px hsl(var(--primary) / 0.4),
+      inset 0 0 30px hsl(var(--primary) / 0.2);
+    transform: scale(1.05);
+  }
+
+  .neon-button:active {
+    transform: scale(0.98);
+  }
+
+  .neon-button-secondary {
+    @apply border-secondary text-secondary;
+    box-shadow: 
+      0 0 10px hsl(var(--secondary) / 0.3),
+      inset 0 0 20px hsl(var(--secondary) / 0.1);
+  }
+
+  .neon-button-secondary:hover {
+    @apply bg-secondary text-secondary-foreground;
+    box-shadow: 
+      0 0 20px hsl(var(--secondary) / 0.6),
+      0 0 40px hsl(var(--secondary) / 0.4);
+  }
+
+  .neon-button-accent {
+    @apply border-accent text-accent;
+    box-shadow: 
+      0 0 10px hsl(var(--accent) / 0.3),
+      inset 0 0 20px hsl(var(--accent) / 0.1);
+  }
+
+  .neon-button-accent:hover {
+    @apply bg-accent text-accent-foreground;
+    box-shadow: 
+      0 0 20px hsl(var(--accent) / 0.6),
+      0 0 40px hsl(var(--accent) / 0.4);
+  }
+
+  /* Star Glow */
+  .star-glow {
+    animation: star-pulse 2s ease-in-out infinite;
+  }
+
+  /* Panel Glass Effect */
+  .glass-panel {
+    @apply bg-card/90 backdrop-blur-md;
+    @apply border border-primary/30;
+    box-shadow: 
+      0 0 30px hsl(var(--primary) / 0.2),
+      inset 0 1px 0 hsl(var(--primary) / 0.2);
+  }
+
+  /* Pixel Border */
+  .pixel-border {
+    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cpath d='M0 2h2v2H0zM2 0h2v2H2zM4 2h2v2H4zM2 4h2v2H2z' fill='%2300ffff'/%3E%3C/svg%3E") 2 stretch;
+  }
+
+  /* Joystick */
+  .joystick-base {
+    @apply w-32 h-32 rounded-full;
+    @apply bg-gradient-to-b from-muted to-card;
+    @apply border-2 border-primary/50;
+    box-shadow: 
+      inset 0 0 30px hsl(var(--primary) / 0.1),
+      0 0 20px hsl(var(--primary) / 0.2);
+  }
+
+  .joystick-stick {
+    @apply w-14 h-14 rounded-full;
+    @apply bg-gradient-to-b from-primary to-primary/70;
+    box-shadow: 
+      0 0 15px hsl(var(--primary)),
+      inset 0 2px 0 hsl(var(--primary-foreground) / 0.3);
+  }
+
+  /* Loading Bar */
+  .loading-bar {
+    @apply h-2 bg-muted rounded-full overflow-hidden;
+    border: 1px solid hsl(var(--primary) / 0.3);
+  }
+
+  .loading-bar-fill {
+    @apply h-full bg-gradient-to-r from-primary via-secondary to-accent;
+    animation: loading-shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* Space Background */
+  .space-bg {
+    background: var(--gradient-space);
+  }
+}
+
+@layer utilities {
+  /* Animations */
+  @keyframes vhs-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.98; }
+  }
+
+  @keyframes vhs-scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
+  @keyframes star-pulse {
+    0%, 100% { 
+      transform: scale(1);
+      filter: brightness(1);
+    }
+    50% { 
+      transform: scale(1.1);
+      filter: brightness(1.3);
+    }
+  }
+
+  @keyframes loading-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes glitch {
+    0%, 100% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+  }
+
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  @keyframes blink {
+    50% { border-color: transparent; }
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-glitch {
+    animation: glitch 0.3s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 20s linear infinite;
+  }
+
+  .animate-twinkle {
+    animation: twinkle 2s ease-in-out infinite;
+  }
+
+  .animate-typing {
+    overflow: hidden;
+    white-space: nowrap;
+    animation: typing 2s steps(30, end);
+  }
+}
