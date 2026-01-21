@@ -24,6 +24,28 @@ interface ContentPanelProps {
   onClose: () => void;
 }
 
+// VHS Glitch overlay component
+const VHSGlitchOverlay = ({ isActive }: { isActive: boolean }) => {
+  if (!isActive) return null;
+  
+  return (
+    <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+      {/* Scanlines */}
+      <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,hsl(var(--primary)/0.03)_2px,hsl(var(--primary)/0.03)_4px)]" />
+      
+      {/* Glitch bars */}
+      <div className="absolute w-full h-2 bg-primary/20 animate-[glitch-panel_0.3s_ease-out]" style={{ top: '20%' }} />
+      <div className="absolute w-full h-1 bg-secondary/30 animate-[glitch-panel_0.4s_ease-out_0.1s]" style={{ top: '60%' }} />
+      <div className="absolute w-full h-3 bg-accent/10 animate-[glitch-panel_0.35s_ease-out_0.05s]" style={{ top: '80%' }} />
+      
+      {/* Color aberration */}
+      <div className="absolute inset-0 mix-blend-color-dodge opacity-30">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/50 via-transparent to-secondary/50 animate-[vhs-distort_0.4s_ease-out]" />
+      </div>
+    </div>
+  );
+};
+
 // Floating particles component
 const FloatingParticles = () => {
   return (
@@ -137,6 +159,20 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
   const { playClickSound, playHoverSound } = useAudio();
   const [activeTab, setActiveTab] = useState(0);
   const [expandedProject, setExpandedProject] = useState<number | null>(null);
+  const [showGlitch, setShowGlitch] = useState(true);
+  const [isEntering, setIsEntering] = useState(true);
+
+  // Trigger glitch effect on mount and content change
+  useEffect(() => {
+    setShowGlitch(true);
+    setIsEntering(true);
+    const glitchTimer = setTimeout(() => setShowGlitch(false), 600);
+    const enterTimer = setTimeout(() => setIsEntering(false), 800);
+    return () => {
+      clearTimeout(glitchTimer);
+      clearTimeout(enterTimer);
+    };
+  }, [contentType]);
 
   // Certificate images mapping - user will add these to src/assets
   const certificateImages: { [key: string]: string | null } = {
@@ -240,7 +276,14 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
 
   return (
     <div className="fixed inset-0 bg-background/90 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4">
-      <div className="relative glass-panel rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border-2 border-primary/30 shadow-[0_0_50px_hsl(var(--primary)/0.3)]">
+      <div 
+        className={`relative glass-panel rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border-2 border-primary/30 shadow-[0_0_50px_hsl(var(--primary)/0.3)] vhs-panel-effect ${
+          isEntering ? 'animate-panel-enter' : ''
+        } ${showGlitch ? 'animate-vhs-distort' : ''}`}
+      >
+        {/* VHS Glitch Overlay */}
+        <VHSGlitchOverlay isActive={showGlitch} />
+        
         {/* Animated background */}
         <FloatingParticles />
         
@@ -248,7 +291,10 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
         <div className="relative flex items-center justify-between p-4 md:p-6 border-b border-primary/30 bg-gradient-to-r from-primary/10 via-transparent to-secondary/10">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 rounded-full bg-primary animate-pulse shadow-[0_0_10px_hsl(var(--primary))]" />
-            <h2 className="font-pixel text-sm md:text-lg text-primary neon-text">
+            <h2 
+              className={`font-pixel text-sm md:text-lg text-primary neon-text ${showGlitch ? 'animate-chromatic' : ''}`}
+              data-text={content.title}
+            >
               {content.title}
             </h2>
           </div>
@@ -262,11 +308,11 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
         </div>
 
         {/* Content */}
-        <div className="relative p-4 md:p-6 overflow-y-auto max-h-[calc(95vh-80px)] custom-scrollbar">
+        <div className={`relative p-4 md:p-6 overflow-y-auto max-h-[calc(95vh-80px)] custom-scrollbar ${isEntering ? 'animate-fade-in' : ''}`}>
           
           {/* ABOUT ME - Redesigned */}
           {contentType === 'about' && (
-            <div className="space-y-8">
+            <div className={`space-y-8 ${showGlitch ? 'animate-glitch-panel' : ''}`}>
               {/* Profile Hero Section */}
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-accent/20 rounded-2xl blur-xl" />

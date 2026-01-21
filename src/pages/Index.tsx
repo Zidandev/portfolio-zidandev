@@ -4,10 +4,11 @@ import { AudioProvider } from '@/contexts/AudioContext';
 import VHSOverlay from '@/components/VHSOverlay';
 import LoadingScreen from '@/components/LoadingScreen';
 import MainMenu from '@/components/MainMenu';
+import Cutscene from '@/components/Cutscene';
 import SpaceGame from '@/components/SpaceGame';
 import AudioControls from '@/components/AudioControls';
 
-type GameState = 'loading' | 'menu' | 'playing';
+type GameState = 'loading' | 'menu' | 'cutscene' | 'playing';
 
 const Index: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>('loading');
@@ -17,6 +18,10 @@ const Index: React.FC = () => {
   };
 
   const handleStartJourney = () => {
+    setGameState('cutscene');
+  };
+
+  const handleCutsceneComplete = () => {
     setGameState('playing');
   };
 
@@ -32,7 +37,7 @@ const Index: React.FC = () => {
           <VHSOverlay />
 
           {/* Audio Controls */}
-          {gameState !== 'loading' && <AudioControls />}
+          {gameState !== 'loading' && gameState !== 'cutscene' && <AudioControls />}
 
           {/* Game States */}
           {gameState === 'loading' && (
@@ -41,6 +46,10 @@ const Index: React.FC = () => {
 
           {gameState === 'menu' && (
             <MainMenu onStartJourney={handleStartJourney} />
+          )}
+
+          {gameState === 'cutscene' && (
+            <Cutscene onComplete={handleCutsceneComplete} />
           )}
 
           {gameState === 'playing' && (

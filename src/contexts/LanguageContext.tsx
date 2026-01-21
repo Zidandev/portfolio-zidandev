@@ -11,6 +11,68 @@ interface Translations {
 }
 
 const translations: Translations = {
+  // Cutscene translations
+  cutscene_boot: {
+    id: '> NEXUS SYSTEM v1.0.0 ... BOOTING',
+    en: '> NEXUS SYSTEM v1.0.0 ... BOOTING',
+    jp: '> NEXUS SYSTEM v1.0.0 ... 起動中',
+  },
+  cutscene_init: {
+    id: '> MENGINISIALISASI PORTFOLIO ENGINE... BERHASIL',
+    en: '> INITIALIZING PORTFOLIO ENGINE... SUCCESS',
+    jp: '> ポートフォリオエンジン初期化中... 成功',
+  },
+  cutscene_greeting: {
+    id: 'Selamat datang, Traveler. Aku adalah Navigator AI dari NEXUS SPACE.',
+    en: 'Welcome, Traveler. I am the Navigator AI of NEXUS SPACE.',
+    jp: 'ようこそ、トラベラー。私はNEXUS SPACEのナビゲーターAIです。',
+  },
+  cutscene_intro1: {
+    id: 'Kamu telah memasuki dimensi portfolio milik ZIDANDEV - seorang developer yang passionate dalam membangun pengalaman digital yang unik.',
+    en: 'You have entered the portfolio dimension of ZIDANDEV - a developer passionate about building unique digital experiences.',
+    jp: 'あなたはZIDANDEVのポートフォリオ次元に入りました - ユニークなデジタル体験の構築に情熱を注ぐ開発者です。',
+  },
+  cutscene_intro2: {
+    id: 'Di sini, kamu akan menjelajahi berbagai proyek, skill, dan cerita di balik perjalanan coding-nya.',
+    en: 'Here, you will explore various projects, skills, and the story behind their coding journey.',
+    jp: 'ここでは、様々なプロジェクト、スキル、そしてコーディングの旅の物語を探索します。',
+  },
+  cutscene_tutorial1: {
+    id: 'Gunakan JOYSTICK di kiri bawah layar untuk menggerakkan pesawat luar angkasa-mu.',
+    en: 'Use the JOYSTICK at the bottom left of the screen to move your spaceship.',
+    jp: '画面左下のジョイスティックを使って宇宙船を動かしてください。',
+  },
+  cutscene_tutorial2: {
+    id: 'Navigasi ke berbagai STATION untuk membuka konten portfolio - About, Projects, Skills, dan lainnya.',
+    en: 'Navigate to various STATIONS to unlock portfolio content - About, Projects, Skills, and more.',
+    jp: '様々なステーションに移動してポートフォリオコンテンツをアンロック - About、Projects、Skillsなど。',
+  },
+  cutscene_tutorial3: {
+    id: 'Eksplorasi ruang angkasa, kumpulkan bintang, dan temukan easter egg yang tersembunyi!',
+    en: 'Explore the space, collect stars, and find hidden easter eggs!',
+    jp: '宇宙を探索し、星を集め、隠されたイースターエッグを見つけよう！',
+  },
+  cutscene_ready: {
+    id: 'Pesawatmu sudah siap. Saatnya memulai perjalanan epik ini!',
+    en: 'Your ship is ready. Time to begin this epic journey!',
+    jp: '船の準備ができました。このエピックな旅を始める時です！',
+  },
+  cutscene_launch: {
+    id: '> PELUNCURAN DALAM 3... 2... 1... SELAMAT MENJELAJAH!',
+    en: '> LAUNCHING IN 3... 2... 1... HAPPY EXPLORING!',
+    jp: '> 発射 3... 2... 1... 探索を楽しんで！',
+  },
+  cutscene_continue: {
+    id: 'LANJUTKAN',
+    en: 'CONTINUE',
+    jp: '続ける',
+  },
+  cutscene_start: {
+    id: 'MULAI PETUALANGAN',
+    en: 'START ADVENTURE',
+    jp: '冒険を始める',
+  },
+  // Loading Screen
   // Loading Screen
   loading: {
     id: 'MEMUAT SISTEM...',
