@@ -13,7 +13,7 @@ interface DialogLine {
 
 const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
   const { t } = useLanguage();
-  const { playClickSound, playHoverSound } = useAudio();
+  const { playClickSound, playHoverSound, playDialogSound, playAlienSpeech } = useAudio();
   
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
@@ -60,7 +60,14 @@ const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
 
   const currentLine = dialogLines[currentLineIndex];
 
-  // Typewriter effect
+  // Play dialog sound when speaker changes
+  useEffect(() => {
+    if (currentLine) {
+      playDialogSound(currentLine.speaker);
+    }
+  }, [currentLineIndex, currentLine, playDialogSound]);
+
+  // Typewriter effect with alien speech sounds
   useEffect(() => {
     if (!currentLine) return;
     
@@ -74,8 +81,12 @@ const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
     
     const typeInterval = setInterval(() => {
       if (charIndex < text.length) {
+        const currentChar = text[charIndex];
         setDisplayedText(text.slice(0, charIndex + 1));
         charIndex++;
+        
+        // Play alien speech sound for each character (gives voice effect)
+        playAlienSpeech(currentLine.speaker, currentChar);
         
         // Random glitch during typing
         if (Math.random() > 0.95) {
@@ -90,7 +101,7 @@ const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
     }, speed);
 
     return () => clearInterval(typeInterval);
-  }, [currentLineIndex, currentLine, t]);
+  }, [currentLineIndex, currentLine, t, playAlienSpeech]);
 
   // Update phase based on line index
   useEffect(() => {

@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { LanguageProvider } from '@/contexts/LanguageContext';
-import { AudioProvider } from '@/contexts/AudioContext';
 import VHSOverlay from '@/components/VHSOverlay';
 import LoadingScreen from '@/components/LoadingScreen';
 import MainMenu from '@/components/MainMenu';
 import Cutscene from '@/components/Cutscene';
+import LaunchTransition from '@/components/LaunchTransition';
 import SpaceGame from '@/components/SpaceGame';
 import AudioControls from '@/components/AudioControls';
 
-type GameState = 'loading' | 'menu' | 'cutscene' | 'playing';
+type GameState = 'loading' | 'menu' | 'cutscene' | 'launching' | 'playing';
 
 const Index: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>('loading');
@@ -22,6 +21,10 @@ const Index: React.FC = () => {
   };
 
   const handleCutsceneComplete = () => {
+    setGameState('launching');
+  };
+
+  const handleLaunchComplete = () => {
     setGameState('playing');
   };
 
@@ -30,34 +33,34 @@ const Index: React.FC = () => {
   };
 
   return (
-    <LanguageProvider>
-      <AudioProvider>
-        <div className="relative min-h-screen bg-background overflow-hidden">
-          {/* VHS Effect Overlay - Always visible */}
-          <VHSOverlay />
+    <div className="relative min-h-screen bg-background overflow-hidden">
+      {/* VHS Effect Overlay - Always visible */}
+      <VHSOverlay />
 
-          {/* Audio Controls */}
-          {gameState !== 'loading' && gameState !== 'cutscene' && <AudioControls />}
+      {/* Audio Controls */}
+      {gameState !== 'loading' && gameState !== 'cutscene' && gameState !== 'launching' && <AudioControls />}
 
-          {/* Game States */}
-          {gameState === 'loading' && (
-            <LoadingScreen onComplete={handleLoadingComplete} />
-          )}
+      {/* Game States */}
+      {gameState === 'loading' && (
+        <LoadingScreen onComplete={handleLoadingComplete} />
+      )}
 
-          {gameState === 'menu' && (
-            <MainMenu onStartJourney={handleStartJourney} />
-          )}
+      {gameState === 'menu' && (
+        <MainMenu onStartJourney={handleStartJourney} />
+      )}
 
-          {gameState === 'cutscene' && (
-            <Cutscene onComplete={handleCutsceneComplete} />
-          )}
+      {gameState === 'cutscene' && (
+        <Cutscene onComplete={handleCutsceneComplete} />
+      )}
 
-          {gameState === 'playing' && (
-            <SpaceGame onBack={handleBackToMenu} />
-          )}
-        </div>
-      </AudioProvider>
-    </LanguageProvider>
+      {gameState === 'launching' && (
+        <LaunchTransition onComplete={handleLaunchComplete} />
+      )}
+
+      {gameState === 'playing' && (
+        <SpaceGame onBack={handleBackToMenu} />
+      )}
+    </div>
   );
 };
 

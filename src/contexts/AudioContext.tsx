@@ -12,27 +12,30 @@ interface AudioContextType {
   stopEngineSound: () => void;
   playLaserSound: () => void;
   playExplosionSound: () => void;
+  playDialogSound: (speaker: 'system' | 'ai' | 'narrator') => void;
+  playTypingSound: (speaker: 'system' | 'ai' | 'narrator') => void;
+  playAlienSpeech: (speaker: 'system' | 'ai' | 'narrator', char: string) => void;
 }
 
-const AudioContext = createContext<AudioContextType | undefined>(undefined);
+const AudioCtx = createContext<AudioContextType | undefined>(undefined);
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolumeState] = useState(1);
   const [isInitialized, setIsInitialized] = useState(false);
   
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const webAudioContextRef = useRef<globalThis.AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const ambientNodesRef = useRef<OscillatorNode[]>([]);
   const engineOscRef = useRef<OscillatorNode | null>(null);
   const engineGainRef = useRef<GainNode | null>(null);
 
   const initAudio = useCallback(() => {
-    if (isInitialized || audioContextRef.current) return;
+    if (isInitialized || webAudioContextRef.current) return;
 
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      audioContextRef.current = ctx;
+      webAudioContextRef.current = ctx;
 
       // Master gain
       const masterGain = ctx.createGain();
@@ -145,8 +148,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const playHoverSound = useCallback(() => {
-    if (!audioContextRef.current || isMuted) return;
-    const ctx = audioContextRef.current;
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
     
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -164,8 +167,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isMuted, volume]);
 
   const playClickSound = useCallback(() => {
-    if (!audioContextRef.current || isMuted) return;
-    const ctx = audioContextRef.current;
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
     
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -184,8 +187,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isMuted, volume]);
 
   const playCollisionSound = useCallback(() => {
-    if (!audioContextRef.current || isMuted) return;
-    const ctx = audioContextRef.current;
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
     
     // Magical chime sound
     const frequencies = [523, 659, 784, 1047];
@@ -208,8 +211,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isMuted, volume]);
 
   const playEngineSound = useCallback((intensity: number) => {
-    if (!audioContextRef.current || isMuted) return;
-    const ctx = audioContextRef.current;
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
     
     if (!engineOscRef.current) {
       const osc = ctx.createOscillator();
@@ -242,8 +245,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const playLaserSound = useCallback(() => {
-    if (!audioContextRef.current || isMuted) return;
-    const ctx = audioContextRef.current;
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
     
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -262,8 +265,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isMuted, volume]);
 
   const playExplosionSound = useCallback(() => {
-    if (!audioContextRef.current || isMuted) return;
-    const ctx = audioContextRef.current;
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
     
     // Create noise buffer for explosion
     const bufferSize = ctx.sampleRate * 0.3;
@@ -290,8 +293,267 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     source.start();
   }, [isMuted, volume]);
 
+  // Dialog sound for each character - plays when dialog starts
+  const playDialogSound = useCallback((speaker: 'system' | 'ai' | 'narrator') => {
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
+    
+    switch (speaker) {
+      case 'system': {
+        // System: Digital beep sequence (like a computer boot)
+        const frequencies = [880, 1100, 880, 1320];
+        frequencies.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          
+          osc.type = 'square';
+          osc.frequency.value = freq;
+          gain.gain.value = 0.06 * volume;
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          const startTime = ctx.currentTime + i * 0.08;
+          osc.start(startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.07);
+          osc.stop(startTime + 0.08);
+        });
+        break;
+      }
+      case 'ai': {
+        // AI Navigator: Warm, melodic chime (friendly AI)
+        const frequencies = [523, 659, 784, 1047, 1319];
+        frequencies.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.value = 0.08 * volume * (1 - i * 0.15);
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          const startTime = ctx.currentTime + i * 0.06;
+          osc.start(startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+          osc.stop(startTime + 0.3);
+        });
+        break;
+      }
+      case 'narrator': {
+        // Guide: Soft, mystical whoosh with reverb feel
+        const osc = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        osc.type = 'sine';
+        osc.frequency.value = 220;
+        osc2.type = 'sine';
+        osc2.frequency.value = 330;
+        
+        filter.type = 'lowpass';
+        filter.frequency.value = 800;
+        filter.Q.value = 2;
+        
+        gain.gain.value = 0.1 * volume;
+        
+        osc.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
+        osc2.frequency.exponentialRampToValueAtTime(550, ctx.currentTime + 0.3);
+        
+        osc.start();
+        osc2.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.stop(ctx.currentTime + 0.45);
+        osc2.stop(ctx.currentTime + 0.45);
+        break;
+      }
+    }
+  }, [isMuted, volume]);
+
+  // Typing sound effect for each character
+  const playTypingSound = useCallback((speaker: 'system' | 'ai' | 'narrator') => {
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
+    
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    switch (speaker) {
+      case 'system': {
+        // System: Sharp digital tick
+        osc.type = 'square';
+        osc.frequency.value = 1200 + Math.random() * 400;
+        gain.gain.value = 0.02 * volume;
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+        osc.stop(ctx.currentTime + 0.03);
+        break;
+      }
+      case 'ai': {
+        // AI: Soft melodic blip
+        osc.type = 'sine';
+        osc.frequency.value = 600 + Math.random() * 200;
+        gain.gain.value = 0.025 * volume;
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        osc.frequency.exponentialRampToValueAtTime(osc.frequency.value * 1.2, ctx.currentTime + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        osc.stop(ctx.currentTime + 0.05);
+        break;
+      }
+      case 'narrator': {
+        // Guide: Gentle whisper tick
+        osc.type = 'triangle';
+        osc.frequency.value = 300 + Math.random() * 100;
+        gain.gain.value = 0.03 * volume;
+        
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 600;
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        osc.stop(ctx.currentTime + 0.06);
+        break;
+      }
+    }
+  }, [isMuted, volume]);
+
+  // Alien speech sound - unique voice for each character
+  const playAlienSpeech = useCallback((speaker: 'system' | 'ai' | 'narrator', char: string) => {
+    if (!webAudioContextRef.current || isMuted) return;
+    // Skip spaces and punctuation for cleaner sound
+    if (/[\s.,!?;:'"()\[\]{}]/.test(char)) return;
+    
+    const ctx = webAudioContextRef.current;
+    const charCode = char.charCodeAt(0);
+    
+    switch (speaker) {
+      case 'system': {
+        // System: Robotic digital voice - sharp square waves with pitch variation
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        // Base frequency varies with character
+        const baseFreq = 150 + (charCode % 10) * 30;
+        osc.type = 'square';
+        osc.frequency.value = baseFreq;
+        
+        filter.type = 'bandpass';
+        filter.frequency.value = 800;
+        filter.Q.value = 5;
+        
+        gain.gain.value = 0.04 * volume;
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        // Pitch jump for robotic effect
+        osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+        osc.frequency.setValueAtTime(baseFreq * 1.5, ctx.currentTime + 0.02);
+        osc.frequency.setValueAtTime(baseFreq * 0.8, ctx.currentTime + 0.04);
+        
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        osc.stop(ctx.currentTime + 0.07);
+        break;
+      }
+      case 'ai': {
+        // AI Navigator: Friendly melodic alien voice - sine waves with harmonics
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        // Create vowel-like frequencies based on character
+        const vowelFreqs = [270, 390, 530, 660, 730]; // Formant-like frequencies
+        const baseFreq = vowelFreqs[charCode % 5];
+        const harmonic = baseFreq * (1.5 + (charCode % 3) * 0.25);
+        
+        osc1.type = 'sine';
+        osc1.frequency.value = baseFreq;
+        osc2.type = 'sine';
+        osc2.frequency.value = harmonic;
+        
+        gain.gain.value = 0.035 * volume;
+        
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+        
+        // Smooth pitch glide for friendly feel
+        osc1.frequency.exponentialRampToValueAtTime(baseFreq * 1.1, ctx.currentTime + 0.03);
+        osc2.frequency.exponentialRampToValueAtTime(harmonic * 0.95, ctx.currentTime + 0.03);
+        
+        osc1.start();
+        osc2.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+        osc1.stop(ctx.currentTime + 0.08);
+        osc2.stop(ctx.currentTime + 0.08);
+        break;
+      }
+      case 'narrator': {
+        // Guide: Mystical ethereal whisper - breathy with reverb-like layering
+        const osc = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        // Lower, mystical frequencies
+        const baseFreq = 180 + (charCode % 8) * 20;
+        
+        osc.type = 'triangle';
+        osc.frequency.value = baseFreq;
+        osc2.type = 'sine';
+        osc2.frequency.value = baseFreq * 1.5;
+        
+        filter.type = 'lowpass';
+        filter.frequency.value = 600;
+        filter.Q.value = 3;
+        
+        gain.gain.value = 0.045 * volume;
+        
+        osc.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        // Ethereal wavering
+        osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(baseFreq * 1.08, ctx.currentTime + 0.04);
+        osc.frequency.linearRampToValueAtTime(baseFreq * 0.95, ctx.currentTime + 0.08);
+        
+        osc.start();
+        osc2.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+        osc.stop(ctx.currentTime + 0.11);
+        osc2.stop(ctx.currentTime + 0.11);
+        break;
+      }
+    }
+  }, [isMuted, volume]);
+
   return (
-    <AudioContext.Provider value={{
+    <AudioCtx.Provider value={{
       isMuted,
       volume,
       toggleMute,
@@ -303,14 +565,17 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       stopEngineSound,
       playLaserSound,
       playExplosionSound,
+      playDialogSound,
+      playTypingSound,
+      playAlienSpeech,
     }}>
       {children}
-    </AudioContext.Provider>
+    </AudioCtx.Provider>
   );
 };
 
 export const useAudio = () => {
-  const context = useContext(AudioContext);
+  const context = useContext(AudioCtx);
   if (!context) {
     throw new Error('useAudio must be used within an AudioProvider');
   }
