@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAudio } from '@/contexts/AudioContext';
+import { usePotatoMode } from '@/contexts/PotatoModeContext';
 
 interface LaunchTransitionProps {
   onComplete: () => void;
@@ -19,15 +20,17 @@ interface Particle {
 
 const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
   const { playEngineSound, stopEngineSound, playExplosionSound } = useAudio();
+  const { isPotatoMode } = usePotatoMode();
   const [phase, setPhase] = useState<'countdown' | 'ignition' | 'launch' | 'hyperspace' | 'complete'>('countdown');
   const [countdown, setCountdown] = useState(3);
   const [shipY, setShipY] = useState(0);
   const [thrustIntensity, setThrustIntensity] = useState(0);
   const [shakeIntensity, setShakeIntensity] = useState(0);
 
-  // Generate exhaust particles
-  const exhaustParticles = useMemo(() => 
-    Array.from({ length: 50 }, (_, i) => ({
+  // Generate exhaust particles - reduced in potato mode
+  const exhaustParticles = useMemo(() => {
+    const count = isPotatoMode ? 10 : 50;
+    return Array.from({ length: count }, (_, i) => ({
       id: i,
       x: 50 + (Math.random() - 0.5) * 20,
       y: 60 + Math.random() * 40,
@@ -37,19 +40,20 @@ const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
       opacity: Math.random() * 0.8 + 0.2,
       color: Math.random() > 0.5 ? 'hsl(35, 100%, 55%)' : 'hsl(20, 100%, 50%)',
       delay: Math.random() * 0.5,
-    })),
-  []);
+    }));
+  }, [isPotatoMode]);
 
-  // Generate star trail particles
-  const starTrailParticles = useMemo(() =>
-    Array.from({ length: 100 }, (_, i) => ({
+  // Generate star trail particles - reduced in potato mode
+  const starTrailParticles = useMemo(() => {
+    const count = isPotatoMode ? 20 : 100;
+    return Array.from({ length: count }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
       size: Math.random() * 3 + 1,
       delay: Math.random() * 2,
-    })),
-  []);
+    }));
+  }, [isPotatoMode]);
 
   // Countdown phase
   useEffect(() => {
@@ -125,11 +129,11 @@ const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
   }, [phase, onComplete, stopEngineSound]);
 
   const getShakeStyle = useCallback(() => {
-    if (shakeIntensity === 0) return {};
+    if (shakeIntensity === 0 || isPotatoMode) return {};
     const x = (Math.random() - 0.5) * shakeIntensity * 20;
     const y = (Math.random() - 0.5) * shakeIntensity * 20;
     return { transform: `translate(${x}px, ${y}px)` };
-  }, [shakeIntensity]);
+  }, [shakeIntensity, isPotatoMode]);
 
   return (
     <div 
@@ -176,18 +180,20 @@ const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
         </div>
       )}
 
-      {/* Scanlines */}
-      <div className="absolute inset-0 pointer-events-none bg-scanlines opacity-30" />
+      {/* Scanlines - skip in potato mode */}
+      {!isPotatoMode && (
+        <div className="absolute inset-0 pointer-events-none bg-scanlines opacity-30" />
+      )}
 
       {/* Countdown display */}
       {phase === 'countdown' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center animate-fade-in">
-          <div className="font-pixel text-sm text-primary mb-4 animate-pulse">
+        <div className={`absolute inset-0 flex flex-col items-center justify-center ${isPotatoMode ? '' : 'animate-fade-in'}`}>
+          <div className={`font-pixel text-sm text-primary mb-4 ${isPotatoMode ? '' : 'animate-pulse'}`}>
             [ LAUNCH SEQUENCE INITIATED ]
           </div>
           <div 
-            className="font-pixel text-8xl md:text-9xl text-primary neon-text animate-pulse"
-            style={{ textShadow: '0 0 40px hsl(var(--primary)), 0 0 80px hsl(var(--primary))' }}
+            className={`font-pixel text-8xl md:text-9xl text-primary ${isPotatoMode ? '' : 'neon-text animate-pulse'}`}
+            style={isPotatoMode ? {} : { textShadow: '0 0 40px hsl(var(--primary)), 0 0 80px hsl(var(--primary))' }}
           >
             {countdown}
           </div>

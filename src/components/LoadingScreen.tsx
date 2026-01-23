@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePotatoMode } from '@/contexts/PotatoModeContext';
 
 interface LoadingScreenProps {
   onComplete: () => void;
@@ -7,6 +8,7 @@ interface LoadingScreenProps {
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
   const { t } = useLanguage();
+  const { isPotatoMode } = usePotatoMode();
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
 
@@ -43,18 +45,20 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
     setStatusText(statusMessages[messageIndex]);
   }, [progress]);
 
+  const starCount = isPotatoMode ? 15 : 50;
+
   return (
     <div className="fixed inset-0 space-bg flex flex-col items-center justify-center z-50">
-      {/* Animated Stars Background */}
+      {/* Animated Stars Background - reduced in potato mode */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(50)].map((_, i) => (
+        {[...Array(starCount)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 bg-primary rounded-full animate-twinkle"
+            className={`absolute w-1 h-1 bg-primary rounded-full ${isPotatoMode ? '' : 'animate-twinkle'}`}
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
+              animationDelay: isPotatoMode ? undefined : `${Math.random() * 2}s`,
               opacity: Math.random() * 0.7 + 0.3,
             }}
           />
@@ -65,10 +69,10 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
       <div className="relative z-10 flex flex-col items-center gap-8 px-4">
         {/* Logo/Title */}
         <div className="text-center">
-          <h1 className="font-pixel text-2xl md:text-4xl text-primary neon-text mb-4 animate-float">
+          <h1 className={`font-pixel text-2xl md:text-4xl text-primary mb-4 ${isPotatoMode ? '' : 'neon-text animate-float'}`}>
             NEXUS SPACE
           </h1>
-          <p className="font-pixel text-xs md:text-sm text-secondary neon-text-magenta">
+          <p className={`font-pixel text-xs md:text-sm text-secondary ${isPotatoMode ? '' : 'neon-text-magenta'}`}>
             PORTFOLIO
           </p>
         </div>

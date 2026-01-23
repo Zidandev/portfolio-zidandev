@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAudio } from '@/contexts/AudioContext';
+import { usePotatoMode } from '@/contexts/PotatoModeContext';
 
 interface CutsceneProps {
   onComplete: () => void;
@@ -14,6 +15,7 @@ interface DialogLine {
 const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
   const { t } = useLanguage();
   const { playClickSound, playHoverSound, playDialogSound, playAlienSpeech } = useAudio();
+  const { isPotatoMode } = usePotatoMode();
   
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
@@ -37,26 +39,28 @@ const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
     { speaker: 'system', textKey: 'cutscene_launch' },
   ], []);
 
-  // Memoize star positions so they don't change on re-render
-  const stars = useMemo(() => 
-    Array.from({ length: 50 }, (_, i) => ({
+  // Memoize star positions so they don't change on re-render - reduced in potato mode
+  const stars = useMemo(() => {
+    const count = isPotatoMode ? 15 : 50;
+    return Array.from({ length: count }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
       top: Math.random() * 100,
       delay: Math.random() * 2,
       opacity: Math.random() * 0.8 + 0.2,
-    })), 
-  []);
+    }));
+  }, [isPotatoMode]);
 
-  // Memoize floating particles positions
-  const particles = useMemo(() =>
-    Array.from({ length: 6 }, (_, i) => ({
+  // Memoize floating particles positions - skip in potato mode
+  const particles = useMemo(() => {
+    if (isPotatoMode) return [];
+    return Array.from({ length: 6 }, (_, i) => ({
       id: i,
       left: 50 + Math.cos((i / 6) * Math.PI * 2) * 60,
       top: 50 + Math.sin((i / 6) * Math.PI * 2) * 60,
       delay: i * 0.2,
-    })),
-  []);
+    }));
+  }, [isPotatoMode]);
 
   const currentLine = dialogLines[currentLineIndex];
 
@@ -88,8 +92,8 @@ const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
         // Play alien speech sound for each character (gives voice effect)
         playAlienSpeech(currentLine.speaker, currentChar);
         
-        // Random glitch during typing
-        if (Math.random() > 0.95) {
+        // Random glitch during typing - skip in potato mode
+        if (!isPotatoMode && Math.random() > 0.95) {
           setGlitchEffect(true);
           setTimeout(() => setGlitchEffect(false), 100);
         }
@@ -125,19 +129,25 @@ const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
     playClickSound();
     
     if (currentLineIndex < dialogLines.length - 1) {
-      setGlitchEffect(true);
-      setTimeout(() => {
-        setGlitchEffect(false);
+      if (!isPotatoMode) {
+        setGlitchEffect(true);
+        setTimeout(() => {
+          setGlitchEffect(false);
+          setCurrentLineIndex(prev => prev + 1);
+        }, 150);
+      } else {
         setCurrentLineIndex(prev => prev + 1);
-      }, 150);
+      }
     } else {
       // Final transition
-      setGlitchEffect(true);
+      if (!isPotatoMode) {
+        setGlitchEffect(true);
+      }
       setTimeout(() => {
         onComplete();
-      }, 500);
+      }, isPotatoMode ? 100 : 500);
     }
-  }, [currentLineIndex, dialogLines.length, onComplete, playClickSound]);
+  }, [currentLineIndex, dialogLines.length, onComplete, playClickSound, isPotatoMode]);
 
   const handleSkip = useCallback(() => {
     playClickSound();
@@ -169,22 +179,24 @@ const Cutscene: React.FC<CutsceneProps> = ({ onComplete }) => {
         {stars.map((star) => (
           <div
             key={star.id}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+            className={`absolute w-1 h-1 bg-white rounded-full ${isPotatoMode ? '' : 'animate-pulse'}`}
             style={{
               left: `${star.left}%`,
               top: `${star.top}%`,
-              animationDelay: `${star.delay}s`,
+              animationDelay: isPotatoMode ? undefined : `${star.delay}s`,
               opacity: star.opacity,
             }}
           />
         ))}
       </div>
 
-      {/* Scanlines overlay */}
-      <div className="absolute inset-0 pointer-events-none bg-scanlines opacity-30" />
+      {/* Scanlines overlay - skip in potato mode */}
+      {!isPotatoMode && (
+        <div className="absolute inset-0 pointer-events-none bg-scanlines opacity-30" />
+      )}
 
-      {/* Glitch overlay */}
-      {glitchEffect && (
+      {/* Glitch overlay - skip in potato mode */}
+      {!isPotatoMode && glitchEffect && (
         <div className="absolute inset-0 pointer-events-none z-40">
           <div className="absolute inset-0 bg-primary/20 animate-glitch-panel" />
           <div className="absolute inset-0 bg-secondary/20 animate-chromatic" style={{ mixBlendMode: 'screen' }} />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAudio } from '@/contexts/AudioContext';
+import { usePotatoMode } from '@/contexts/PotatoModeContext';
 import { X, ExternalLink, Play, Award, Github, Youtube, Instagram, ChevronRight, Sparkles, Zap, Code, Gamepad2, Globe, Star, Rocket, Terminal } from 'lucide-react';
 
 // Import images from src/assets - user will add these files
@@ -157,22 +158,23 @@ const TypewriterText = ({ text, delay = 50 }: { text: string; delay?: number }) 
 const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => {
   const { t } = useLanguage();
   const { playClickSound, playHoverSound } = useAudio();
+  const { isPotatoMode } = usePotatoMode();
   const [activeTab, setActiveTab] = useState(0);
   const [expandedProject, setExpandedProject] = useState<number | null>(null);
-  const [showGlitch, setShowGlitch] = useState(true);
+  const [showGlitch, setShowGlitch] = useState(!isPotatoMode);
   const [isEntering, setIsEntering] = useState(true);
 
-  // Trigger glitch effect on mount and content change
+  // Trigger glitch effect on mount and content change - skip in potato mode
   useEffect(() => {
-    setShowGlitch(true);
+    if (!isPotatoMode) {
+      setShowGlitch(true);
+      const glitchTimer = setTimeout(() => setShowGlitch(false), 600);
+      return () => clearTimeout(glitchTimer);
+    }
     setIsEntering(true);
-    const glitchTimer = setTimeout(() => setShowGlitch(false), 600);
-    const enterTimer = setTimeout(() => setIsEntering(false), 800);
-    return () => {
-      clearTimeout(glitchTimer);
-      clearTimeout(enterTimer);
-    };
-  }, [contentType]);
+    const enterTimer = setTimeout(() => setIsEntering(false), isPotatoMode ? 200 : 800);
+    return () => clearTimeout(enterTimer);
+  }, [contentType, isPotatoMode]);
 
   // Certificate images mapping - user will add these to src/assets
   const certificateImages: { [key: string]: string | null } = {
@@ -277,22 +279,24 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
   return (
     <div className="fixed inset-0 bg-background/90 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4">
       <div 
-        className={`relative glass-panel rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border-2 border-primary/30 shadow-[0_0_50px_hsl(var(--primary)/0.3)] vhs-panel-effect ${
-          isEntering ? 'animate-panel-enter' : ''
-        } ${showGlitch ? 'animate-vhs-distort' : ''}`}
+        className={`relative glass-panel rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border-2 border-primary/30 ${
+          isPotatoMode ? '' : 'shadow-[0_0_50px_hsl(var(--primary)/0.3)] vhs-panel-effect'
+        } ${
+          isEntering && !isPotatoMode ? 'animate-panel-enter' : ''
+        } ${showGlitch && !isPotatoMode ? 'animate-vhs-distort' : ''}`}
       >
-        {/* VHS Glitch Overlay */}
-        <VHSGlitchOverlay isActive={showGlitch} />
+        {/* VHS Glitch Overlay - skip in potato mode */}
+        {!isPotatoMode && <VHSGlitchOverlay isActive={showGlitch} />}
         
-        {/* Animated background */}
-        <FloatingParticles />
+        {/* Animated background - skip in potato mode */}
+        {!isPotatoMode && <FloatingParticles />}
         
         {/* Header with neon effect */}
-        <div className="relative flex items-center justify-between p-4 md:p-6 border-b border-primary/30 bg-gradient-to-r from-primary/10 via-transparent to-secondary/10">
+        <div className={`relative flex items-center justify-between p-4 md:p-6 border-b border-primary/30 ${isPotatoMode ? '' : 'bg-gradient-to-r from-primary/10 via-transparent to-secondary/10'}`}>
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-primary animate-pulse shadow-[0_0_10px_hsl(var(--primary))]" />
+            <div className={`w-3 h-3 rounded-full bg-primary ${isPotatoMode ? '' : 'animate-pulse shadow-[0_0_10px_hsl(var(--primary))]'}`} />
             <h2 
-              className={`font-pixel text-sm md:text-lg text-primary neon-text ${showGlitch ? 'animate-chromatic' : ''}`}
+              className={`font-pixel text-sm md:text-lg text-primary ${isPotatoMode ? '' : 'neon-text'} ${showGlitch && !isPotatoMode ? 'animate-chromatic' : ''}`}
               data-text={content.title}
             >
               {content.title}
@@ -308,11 +312,11 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
         </div>
 
         {/* Content */}
-        <div className={`relative p-4 md:p-6 overflow-y-auto max-h-[calc(95vh-80px)] custom-scrollbar ${isEntering ? 'animate-fade-in' : ''}`}>
+        <div className={`relative p-4 md:p-6 overflow-y-auto max-h-[calc(95vh-80px)] custom-scrollbar ${isEntering && !isPotatoMode ? 'animate-fade-in' : ''}`}>
           
           {/* ABOUT ME - Redesigned */}
           {contentType === 'about' && (
-            <div className={`space-y-8 ${showGlitch ? 'animate-glitch-panel' : ''}`}>
+            <div className={`space-y-8 ${showGlitch && !isPotatoMode ? 'animate-glitch-panel' : ''}`}>
               {/* Profile Hero Section */}
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-accent/20 rounded-2xl blur-xl" />

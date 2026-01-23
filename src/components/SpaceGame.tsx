@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAudio } from '@/contexts/AudioContext';
+import { usePotatoMode } from '@/contexts/PotatoModeContext';
 import Joystick from './Joystick';
 import ContentPanel from './ContentPanel';
 
@@ -20,6 +21,7 @@ interface SpaceGameProps {
 const SpaceGame: React.FC<SpaceGameProps> = ({ onBack }) => {
   const { t } = useLanguage();
   const { playCollisionSound, playEngineSound, stopEngineSound, playClickSound } = useAudio();
+  const { isPotatoMode } = usePotatoMode();
   const gameRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [velocity, setVelocity] = useState({ x: 0, y: 0 });
@@ -190,9 +192,10 @@ const SpaceGame: React.FC<SpaceGameProps> = ({ onBack }) => {
     };
   }, [gameLoop]);
 
-  // Generate background stars
+  // Generate background stars - reduced in potato mode
   const backgroundStars = React.useMemo(() => {
-    return [...Array(200)].map((_, i) => ({
+    const starCount = isPotatoMode ? 40 : 200;
+    return [...Array(starCount)].map((_, i) => ({
       id: i,
       x: (Math.random() - 0.5) * WORLD_SIZE * 1.5,
       y: (Math.random() - 0.5) * WORLD_SIZE * 1.5,
@@ -200,7 +203,7 @@ const SpaceGame: React.FC<SpaceGameProps> = ({ onBack }) => {
       opacity: Math.random() * 0.5 + 0.2,
       delay: Math.random() * 3,
     }));
-  }, [playClickSound]);
+  }, [isPotatoMode]);
 
   return (
     <div ref={gameRef} className="fixed inset-0 space-bg overflow-hidden">
@@ -219,14 +222,14 @@ const SpaceGame: React.FC<SpaceGameProps> = ({ onBack }) => {
         {backgroundStars.map((star) => (
           <div
             key={star.id}
-            className="absolute rounded-full bg-foreground animate-twinkle"
+            className={`absolute rounded-full bg-foreground ${isPotatoMode ? '' : 'animate-twinkle'}`}
             style={{
               left: star.x + WORLD_SIZE / 2,
               top: star.y + WORLD_SIZE / 2,
               width: star.size,
               height: star.size,
               opacity: star.opacity,
-              animationDelay: `${star.delay}s`,
+              animationDelay: isPotatoMode ? undefined : `${star.delay}s`,
             }}
           />
         ))}
@@ -241,19 +244,21 @@ const SpaceGame: React.FC<SpaceGameProps> = ({ onBack }) => {
               top: star.y + WORLD_SIZE / 2 - 50,
             }}
           >
-            {/* Star Glow */}
+            {/* Star Glow - simplified in potato mode */}
             <div
-              className="w-24 h-24 rounded-full star-glow flex items-center justify-center"
+              className={`w-24 h-24 rounded-full flex items-center justify-center ${isPotatoMode ? '' : 'star-glow'}`}
               style={{
-                background: `radial-gradient(circle, ${star.color} 0%, transparent 70%)`,
-                boxShadow: `0 0 30px ${star.color}, 0 0 60px ${star.color}40`,
+                background: isPotatoMode 
+                  ? star.color 
+                  : `radial-gradient(circle, ${star.color} 0%, transparent 70%)`,
+                boxShadow: isPotatoMode ? 'none' : `0 0 30px ${star.color}, 0 0 60px ${star.color}40`,
               }}
             >
               <div
                 className="w-12 h-12 rounded-full"
                 style={{
                   background: star.color,
-                  boxShadow: `0 0 20px ${star.color}`,
+                  boxShadow: isPotatoMode ? 'none' : `0 0 20px ${star.color}`,
                 }}
               />
             </div>

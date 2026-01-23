@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAudio } from '@/contexts/AudioContext';
+import { usePotatoMode } from '@/contexts/PotatoModeContext';
 import LanguageSelector from './LanguageSelector';
+import PotatoModeSwitch from './PotatoModeSwitch';
 
 interface MainMenuProps {
   onStartJourney: () => void;
@@ -63,6 +65,7 @@ interface Star {
 const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
   const { t } = useLanguage();
   const { playHoverSound, playClickSound, playLaserSound, playExplosionSound } = useAudio();
+  const { isPotatoMode } = usePotatoMode();
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [showExitMessage, setShowExitMessage] = useState(false);
   
@@ -75,7 +78,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
   const starsRef = useRef<Star[]>([]);
   const lastShotTimeRef = useRef<number>(0);
 
-  // Initialize animation objects
+  // Initialize animation objects - reduced for potato mode
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -83,8 +86,9 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    // Create stars
-    starsRef.current = Array.from({ length: 150 }, (_, i) => ({
+    // Create stars - reduced count for potato mode
+    const starCount = isPotatoMode ? 30 : 150;
+    starsRef.current = Array.from({ length: starCount }, (_, i) => ({
       id: i,
       x: Math.random() * width,
       y: Math.random() * height,
@@ -93,9 +97,10 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
       twinkleSpeed: Math.random() * 0.02 + 0.01
     }));
 
-    // Create spaceships
+    // Create spaceships - none in potato mode
     const colors = ['#00ffff', '#ff00ff', '#ffff00', '#00ff00', '#ff6600'];
-    spaceshipsRef.current = Array.from({ length: 8 }, (_, i) => ({
+    const shipCount = isPotatoMode ? 0 : 8;
+    spaceshipsRef.current = Array.from({ length: shipCount }, (_, i) => ({
       id: i,
       x: Math.random() * width,
       y: Math.random() * height,
@@ -108,8 +113,9 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
       targetId: i % 2 === 0 ? (i + 1) % 8 : undefined
     }));
 
-    // Create meteors
-    meteorsRef.current = Array.from({ length: 12 }, (_, i) => ({
+    // Create meteors - reduced for potato mode
+    const meteorCount = isPotatoMode ? 3 : 12;
+    meteorsRef.current = Array.from({ length: meteorCount }, (_, i) => ({
       id: i,
       x: Math.random() * width,
       y: Math.random() * height,
@@ -120,13 +126,14 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
       rotationSpeed: (Math.random() - 0.5) * 0.05
     }));
 
-    // Create planets
-    planetsRef.current = [
+    // Create planets - reduced for potato mode
+    const allPlanets = [
       { id: 0, x: width * 0.15, y: height * 0.2, size: 60, color: '#ff6b6b', orbitSpeed: 0.001, orbitRadius: 0, orbitAngle: 0 },
       { id: 1, x: width * 0.85, y: height * 0.3, size: 80, color: '#4ecdc4', orbitSpeed: 0.0008, orbitRadius: 0, orbitAngle: Math.PI },
       { id: 2, x: width * 0.1, y: height * 0.8, size: 50, color: '#ffe66d', orbitSpeed: 0.0012, orbitRadius: 0, orbitAngle: Math.PI / 2 },
       { id: 3, x: width * 0.9, y: height * 0.75, size: 70, color: '#95e1d3', orbitSpeed: 0.0006, orbitRadius: 0, orbitAngle: Math.PI * 1.5 }
     ];
+    planetsRef.current = isPotatoMode ? allPlanets.slice(0, 1) : allPlanets;
 
     lasersRef.current = [];
 
@@ -144,28 +151,32 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
       ctx.fillStyle = 'rgba(10, 10, 30, 0.3)';
       ctx.fillRect(0, 0, w, h);
 
-      // Draw and update stars
+      // Draw and update stars (simplified in potato mode)
       starsRef.current.forEach(star => {
-        star.opacity = 0.3 + Math.sin(time * star.twinkleSpeed) * 0.5;
+        if (!isPotatoMode) {
+          star.opacity = 0.3 + Math.sin(time * star.twinkleSpeed) * 0.5;
+        }
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${isPotatoMode ? 0.6 : star.opacity})`;
         ctx.fill();
       });
 
-      // Draw and update planets
+      // Draw and update planets (simplified in potato mode)
       planetsRef.current.forEach(planet => {
-        planet.orbitAngle += planet.orbitSpeed;
-        
-        // Draw planet glow
-        const gradient = ctx.createRadialGradient(planet.x, planet.y, 0, planet.x, planet.y, planet.size * 1.5);
-        gradient.addColorStop(0, planet.color);
-        gradient.addColorStop(0.5, planet.color + '80');
-        gradient.addColorStop(1, 'transparent');
-        ctx.beginPath();
-        ctx.arc(planet.x, planet.y, planet.size * 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
+        if (!isPotatoMode) {
+          planet.orbitAngle += planet.orbitSpeed;
+          
+          // Draw planet glow (skip in potato mode)
+          const gradient = ctx.createRadialGradient(planet.x, planet.y, 0, planet.x, planet.y, planet.size * 1.5);
+          gradient.addColorStop(0, planet.color);
+          gradient.addColorStop(0.5, planet.color + '80');
+          gradient.addColorStop(1, 'transparent');
+          ctx.beginPath();
+          ctx.arc(planet.x, planet.y, planet.size * 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+        }
 
         // Draw planet
         ctx.beginPath();
@@ -173,8 +184,8 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
         ctx.fillStyle = planet.color;
         ctx.fill();
 
-        // Draw planet rings for some
-        if (planet.id % 2 === 0) {
+        // Draw planet rings for some (skip in potato mode)
+        if (!isPotatoMode && planet.id % 2 === 0) {
           ctx.save();
           ctx.translate(planet.x, planet.y);
           ctx.rotate(0.3);
@@ -188,11 +199,13 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
         }
       });
 
-      // Update and draw meteors
+      // Update and draw meteors (simplified in potato mode)
       meteorsRef.current.forEach(meteor => {
         meteor.x += meteor.vx;
         meteor.y += meteor.vy;
-        meteor.rotation += meteor.rotationSpeed;
+        if (!isPotatoMode) {
+          meteor.rotation += meteor.rotationSpeed;
+        }
 
         // Wrap around screen
         if (meteor.x < -50) meteor.x = w + 50;
@@ -206,27 +219,35 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
         ctx.translate(meteor.x, meteor.y);
         ctx.rotate(meteor.rotation);
 
-        // Draw meteor with tail
-        const tailGradient = ctx.createLinearGradient(0, 0, -meteor.size * 2, -meteor.size);
-        tailGradient.addColorStop(0, '#ff6600');
-        tailGradient.addColorStop(1, 'transparent');
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-meteor.size * 2, -meteor.size * 0.5);
-        ctx.lineTo(-meteor.size * 1.5, 0);
-        ctx.closePath();
-        ctx.fillStyle = tailGradient;
-        ctx.fill();
+        if (!isPotatoMode) {
+          // Draw meteor with tail (full mode only)
+          const tailGradient = ctx.createLinearGradient(0, 0, -meteor.size * 2, -meteor.size);
+          tailGradient.addColorStop(0, '#ff6600');
+          tailGradient.addColorStop(1, 'transparent');
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(-meteor.size * 2, -meteor.size * 0.5);
+          ctx.lineTo(-meteor.size * 1.5, 0);
+          ctx.closePath();
+          ctx.fillStyle = tailGradient;
+          ctx.fill();
 
-        // Draw meteor body
-        ctx.beginPath();
-        ctx.arc(0, 0, meteor.size / 2, 0, Math.PI * 2);
-        const meteorGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, meteor.size / 2);
-        meteorGradient.addColorStop(0, '#ffcc00');
-        meteorGradient.addColorStop(0.5, '#ff6600');
-        meteorGradient.addColorStop(1, '#993300');
-        ctx.fillStyle = meteorGradient;
-        ctx.fill();
+          // Draw meteor body with gradient
+          ctx.beginPath();
+          ctx.arc(0, 0, meteor.size / 2, 0, Math.PI * 2);
+          const meteorGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, meteor.size / 2);
+          meteorGradient.addColorStop(0, '#ffcc00');
+          meteorGradient.addColorStop(0.5, '#ff6600');
+          meteorGradient.addColorStop(1, '#993300');
+          ctx.fillStyle = meteorGradient;
+          ctx.fill();
+        } else {
+          // Simple meteor in potato mode
+          ctx.beginPath();
+          ctx.arc(0, 0, meteor.size / 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#ff6600';
+          ctx.fill();
+        }
 
         ctx.restore();
       });
@@ -388,7 +409,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
       }
       window.removeEventListener('resize', handleResize);
     };
-  }, [playLaserSound, playExplosionSound]);
+  }, [playLaserSound, playExplosionSound, isPotatoMode]);
 
   const handleExit = () => {
     playClickSound();
@@ -420,11 +441,11 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
       {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 md:gap-12 px-4">
         {/* Title */}
-        <div className="text-center animate-fade-in">
-          <h1 className="font-pixel text-2xl sm:text-3xl md:text-5xl text-primary neon-text mb-4 tracking-wider">
+        <div className={`text-center ${isPotatoMode ? '' : 'animate-fade-in'}`}>
+          <h1 className={`font-pixel text-2xl sm:text-3xl md:text-5xl text-primary mb-4 tracking-wider ${isPotatoMode ? '' : 'neon-text'}`}>
             NEXUS SPACE
           </h1>
-          <div className="font-pixel text-base sm:text-lg md:text-2xl text-secondary neon-text-magenta mb-2">
+          <div className={`font-pixel text-base sm:text-lg md:text-2xl text-secondary mb-2 ${isPotatoMode ? '' : 'neon-text-magenta'}`}>
             PORTFOLIO
           </div>
           <p className="font-orbitron text-xs sm:text-sm md:text-base text-muted-foreground">
@@ -433,12 +454,15 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
         </div>
 
         {/* Decorative Line */}
-        <div className="w-32 sm:w-48 md:w-64 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />
+        <div className={`w-32 sm:w-48 md:w-64 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent ${isPotatoMode ? '' : 'animate-pulse'}`} />
+
+        {/* Potato Mode Switch */}
+        <PotatoModeSwitch />
 
         {/* Menu Buttons */}
         <div className="flex flex-col gap-4 md:gap-6 w-full max-w-xs sm:max-w-sm md:max-w-md">
           <button
-            className="neon-button w-full animate-fade-in text-sm sm:text-base"
+            className={`neon-button w-full text-sm sm:text-base ${isPotatoMode ? '' : 'animate-fade-in'}`}
             style={{ animationDelay: '0.2s' }}
             onClick={() => handleButtonClick(onStartJourney)}
             onMouseEnter={handleHover}
@@ -447,7 +471,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
           </button>
 
           <button
-            className="neon-button neon-button-secondary w-full animate-fade-in text-sm sm:text-base"
+            className={`neon-button neon-button-secondary w-full text-sm sm:text-base ${isPotatoMode ? '' : 'animate-fade-in'}`}
             style={{ animationDelay: '0.4s' }}
             onClick={() => handleButtonClick(() => setShowLanguageSelector(true))}
             onMouseEnter={handleHover}
@@ -456,7 +480,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
           </button>
 
           <button
-            className="neon-button neon-button-accent w-full animate-fade-in text-sm sm:text-base"
+            className={`neon-button neon-button-accent w-full text-sm sm:text-base ${isPotatoMode ? '' : 'animate-fade-in'}`}
             style={{ animationDelay: '0.6s' }}
             onClick={handleExit}
             onMouseEnter={handleHover}
@@ -479,8 +503,8 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartJourney }) => {
       {/* Exit Message */}
       {showExitMessage && (
         <div className="fixed inset-0 bg-background/90 flex items-center justify-center z-50">
-          <div className="text-center animate-fade-in">
-            <p className="font-pixel text-lg sm:text-xl text-primary neon-text">
+          <div className={`text-center ${isPotatoMode ? '' : 'animate-fade-in'}`}>
+            <p className={`font-pixel text-lg sm:text-xl text-primary ${isPotatoMode ? '' : 'neon-text'}`}>
               {t('exitConfirm')}
             </p>
           </div>
