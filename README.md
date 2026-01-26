@@ -110,7 +110,7 @@ npm run dev
 
 ## 🌐 Live Demo
 
-🔗 **[Visit Nexus Space Portfolio](https://nexus-star-voyage.lovable.app)**
+🔗 **[Visit Nexus Space Portfolio](https://portfolio-zidandev.vercel.app/)**
 
 ---
 
