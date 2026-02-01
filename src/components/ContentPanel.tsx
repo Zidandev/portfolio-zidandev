@@ -4,12 +4,20 @@ import { useAudio } from '@/contexts/AudioContext';
 import { usePotatoMode } from '@/contexts/PotatoModeContext';
 import { X, ExternalLink, Play, Award, Github, Youtube, Instagram, ChevronRight, Sparkles, Zap, Code, Gamepad2, Globe, Star, Rocket, Terminal } from 'lucide-react';
 
-// Import images from src/assets - user will add these files
+// Import images from src/assets
+import profileIcon from '@/assets/Icon_Zidane.png';
 // Uncomment when files are added:
-// import mukaImg from '@/assets/muka.png';
 // import certVeirtech from '@/assets/cert-veirtech.png';
 // import certHadroh from '@/assets/cert-hadroh.png';
 // import certJapanese from '@/assets/cert-japanese.png';
+
+// Game thumbnail images
+const gameThumbnails: { [key: string]: string } = {
+  '2D Frits': 'https://img.itch.zone/aW1nLzExMDk3MTc3LnBuZw==/315x250%23c/o8kJzz.png',
+  'Space Shot': 'https://img.itch.zone/aW1nLzE4NjA2NTM4LnBuZw==/315x250%23c/S60CGg.png',
+  'Zidane World Nexus': 'https://img.itch.zone/aW1nLzIyNjk1MTcyLnBuZw==/315x250%23c/YSCpEs.png',
+  'Eco Love': 'https://img.itch.zone/aW1nLzIyNjYyMTMwLnBuZw==/315x250%23c/nwso5r.png',
+};
 
 interface ContentItem {
   title: string;
@@ -183,8 +191,8 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
     japanese: null, // Replace with: certJapanese
   };
 
-  // Profile image - user will add muka.png to src/assets
-  const profileImage: string | null = null; // Replace with: mukaImg
+  // Profile image
+  const profileImage: string | null = profileIcon;
 
   const getContent = (): { title: string; items: ContentItem[] } => {
     switch (contentType) {
@@ -518,6 +526,17 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
                     <p className="font-orbitron text-sm text-muted-foreground mb-4">
                       {item.description}
                     </p>
+
+                    {/* Game thumbnail preview */}
+                    {item.type === 'game' && gameThumbnails[item.title] && (
+                      <div className="mb-4 rounded-lg overflow-hidden border border-primary/20">
+                        <img 
+                          src={gameThumbnails[item.title]} 
+                          alt={item.title}
+                          className="w-full h-auto object-cover"
+                        />
+                      </div>
+                    )}
 
                     {/* Expanded content */}
                     <div className={`overflow-hidden transition-all duration-500 ${expandedProject === index ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>

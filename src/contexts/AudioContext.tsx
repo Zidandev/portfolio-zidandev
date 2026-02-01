@@ -15,6 +15,9 @@ interface AudioContextType {
   playDialogSound: (speaker: 'system' | 'ai' | 'narrator') => void;
   playTypingSound: (speaker: 'system' | 'ai' | 'narrator') => void;
   playAlienSpeech: (speaker: 'system' | 'ai' | 'narrator', char: string) => void;
+  playCountdownBeep: (number: number) => void;
+  playLaunchRumble: () => void;
+  playHyperspaceWhoosh: () => void;
 }
 
 const AudioCtx = createContext<AudioContextType | undefined>(undefined);
@@ -190,24 +193,55 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!webAudioContextRef.current || isMuted) return;
     const ctx = webAudioContextRef.current;
     
-    // Magical chime sound
+    // Soft magical chime with gradual fade - like arriving at a destination
     const frequencies = [523, 659, 784, 1047];
     
     frequencies.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
       
       osc.type = 'sine';
       osc.frequency.value = freq;
-      gain.gain.value = 0.1 * volume;
       
-      osc.connect(gain);
+      // Lowpass filter to soften the sound
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000;
+      filter.Q.value = 0.5;
+      
+      // Start quieter and fade out smoothly
+      const startTime = ctx.currentTime + i * 0.08;
+      const initialGain = 0.06 * volume * (1 - i * 0.15); // Each note slightly quieter
+      
+      gain.gain.setValueAtTime(initialGain, startTime);
+      // Gradual fade out over longer duration
+      gain.gain.linearRampToValueAtTime(initialGain * 0.5, startTime + 0.15);
+      gain.gain.linearRampToValueAtTime(initialGain * 0.2, startTime + 0.3);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
+      
+      osc.connect(filter);
+      filter.connect(gain);
       gain.connect(ctx.destination);
       
-      osc.start(ctx.currentTime + i * 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.05 + 0.5);
-      osc.stop(ctx.currentTime + i * 0.05 + 0.5);
+      osc.start(startTime);
+      osc.stop(startTime + 0.55);
     });
+    
+    // Add soft sub-bass thump for impact feel
+    const subOsc = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    
+    subOsc.type = 'sine';
+    subOsc.frequency.value = 80;
+    subGain.gain.setValueAtTime(0.08 * volume, ctx.currentTime);
+    subGain.gain.linearRampToValueAtTime(0.04 * volume, ctx.currentTime + 0.1);
+    subGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    
+    subOsc.connect(subGain);
+    subGain.connect(ctx.destination);
+    
+    subOsc.start();
+    subOsc.stop(ctx.currentTime + 0.3);
   }, [isMuted, volume]);
 
   const playEngineSound = useCallback((intensity: number) => {
@@ -552,6 +586,190 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isMuted, volume]);
 
+  // Launch countdown beep - cinematic countdown sound
+  const playCountdownBeep = useCallback((number: number) => {
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
+    
+    // Deep resonant beep that gets higher as countdown progresses
+    const baseFreq = 200 + (3 - number) * 100; // Higher pitch as we approach 0
+    
+    // Main tone
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = baseFreq;
+    gain.gain.value = 0.15 * volume;
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.stop(ctx.currentTime + 0.5);
+    
+    // Harmonic overtone
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.value = baseFreq * 2;
+    gain2.gain.value = 0.08 * volume;
+    
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    
+    osc2.start();
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc2.stop(ctx.currentTime + 0.4);
+    
+    // Sub bass thump
+    const oscSub = ctx.createOscillator();
+    const gainSub = ctx.createGain();
+    oscSub.type = 'sine';
+    oscSub.frequency.value = 60;
+    gainSub.gain.value = 0.2 * volume;
+    
+    oscSub.connect(gainSub);
+    gainSub.connect(ctx.destination);
+    
+    oscSub.start();
+    gainSub.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    oscSub.stop(ctx.currentTime + 0.3);
+  }, [isMuted, volume]);
+
+  // Launch rumble - intense low frequency vibration
+  const playLaunchRumble = useCallback(() => {
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
+    
+    // Create rumble noise
+    const bufferSize = ctx.sampleRate * 2;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1);
+    }
+    
+    const source = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    
+    source.buffer = buffer;
+    filter.type = 'lowpass';
+    filter.frequency.value = 150;
+    filter.Q.value = 1;
+    
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.25 * volume, ctx.currentTime + 0.5);
+    gain.gain.setValueAtTime(0.25 * volume, ctx.currentTime + 1.5);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+    
+    source.start();
+    source.stop(ctx.currentTime + 2.5);
+    
+    // Add oscillating sub bass
+    const oscLow = ctx.createOscillator();
+    const gainLow = ctx.createGain();
+    oscLow.type = 'sine';
+    oscLow.frequency.value = 40;
+    gainLow.gain.value = 0.3 * volume;
+    
+    oscLow.connect(gainLow);
+    gainLow.connect(ctx.destination);
+    
+    oscLow.frequency.setValueAtTime(40, ctx.currentTime);
+    oscLow.frequency.linearRampToValueAtTime(80, ctx.currentTime + 1);
+    oscLow.frequency.linearRampToValueAtTime(120, ctx.currentTime + 2);
+    
+    oscLow.start();
+    gainLow.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+    oscLow.stop(ctx.currentTime + 2.5);
+  }, [isMuted, volume]);
+
+  // Hyperspace whoosh - epic transition sound
+  const playHyperspaceWhoosh = useCallback(() => {
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
+    
+    // Rising sweep
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(100, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(2000, ctx.currentTime + 0.8);
+    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 1.5);
+    
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(500, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(8000, ctx.currentTime + 0.6);
+    filter.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 1.5);
+    
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.15 * volume, ctx.currentTime + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+    
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 1.5);
+    
+    // Add white noise whoosh
+    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 1.5, ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i++) {
+      noiseData[i] = (Math.random() * 2 - 1);
+    }
+    
+    const noiseSource = ctx.createBufferSource();
+    const noiseGain = ctx.createGain();
+    const noiseFilter = ctx.createBiquadFilter();
+    
+    noiseSource.buffer = noiseBuffer;
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(1000, ctx.currentTime);
+    noiseFilter.frequency.exponentialRampToValueAtTime(4000, ctx.currentTime + 0.5);
+    noiseFilter.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 1.5);
+    noiseFilter.Q.value = 0.5;
+    
+    noiseGain.gain.setValueAtTime(0, ctx.currentTime);
+    noiseGain.gain.linearRampToValueAtTime(0.12 * volume, ctx.currentTime + 0.4);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+    
+    noiseSource.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    
+    noiseSource.start();
+    noiseSource.stop(ctx.currentTime + 1.5);
+    
+    // Cinematic boom at the end
+    setTimeout(() => {
+      if (!webAudioContextRef.current || isMuted) return;
+      const boomOsc = ctx.createOscillator();
+      const boomGain = ctx.createGain();
+      
+      boomOsc.type = 'sine';
+      boomOsc.frequency.value = 50;
+      boomGain.gain.value = 0.3 * volume;
+      
+      boomOsc.connect(boomGain);
+      boomGain.connect(ctx.destination);
+      
+      boomOsc.start();
+      boomGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      boomOsc.stop(ctx.currentTime + 0.5);
+    }, 600);
+  }, [isMuted, volume]);
+
   return (
     <AudioCtx.Provider value={{
       isMuted,
@@ -568,6 +786,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       playDialogSound,
       playTypingSound,
       playAlienSpeech,
+      playCountdownBeep,
+      playLaunchRumble,
+      playHyperspaceWhoosh,
     }}>
       {children}
     </AudioCtx.Provider>

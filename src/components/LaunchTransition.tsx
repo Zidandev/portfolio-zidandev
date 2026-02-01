@@ -19,7 +19,7 @@ interface Particle {
 }
 
 const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
-  const { playEngineSound, stopEngineSound, playExplosionSound } = useAudio();
+  const { playEngineSound, stopEngineSound, playExplosionSound, playCountdownBeep, playLaunchRumble, playHyperspaceWhoosh } = useAudio();
   const { isPotatoMode } = usePotatoMode();
   const [phase, setPhase] = useState<'countdown' | 'ignition' | 'launch' | 'hyperspace' | 'complete'>('countdown');
   const [countdown, setCountdown] = useState(3);
@@ -55,9 +55,12 @@ const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
     }));
   }, [isPotatoMode]);
 
-  // Countdown phase
+  // Countdown phase with cinematic beeps
   useEffect(() => {
     if (phase !== 'countdown') return;
+
+    // Play initial beep
+    playCountdownBeep(countdown);
 
     const timer = setInterval(() => {
       setCountdown(prev => {
@@ -66,18 +69,21 @@ const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
           setPhase('ignition');
           return 0;
         }
+        // Play beep for next number
+        playCountdownBeep(prev - 1);
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [phase]);
+  }, [phase, playCountdownBeep]);
 
-  // Ignition phase
+  // Ignition phase with launch rumble
   useEffect(() => {
     if (phase !== 'ignition') return;
 
     playExplosionSound();
+    playLaunchRumble(); // Cinematic rumble sound
     
     // Ramp up thrust
     let intensity = 0;
@@ -94,7 +100,7 @@ const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
     }, 100);
 
     return () => clearInterval(thrustInterval);
-  }, [phase, playEngineSound, playExplosionSound]);
+  }, [phase, playEngineSound, playExplosionSound, playLaunchRumble]);
 
   // Launch phase
   useEffect(() => {
@@ -116,17 +122,18 @@ const LaunchTransition: React.FC<LaunchTransitionProps> = ({ onComplete }) => {
     return () => clearInterval(launchInterval);
   }, [phase, playEngineSound]);
 
-  // Hyperspace phase
+  // Hyperspace phase with epic whoosh
   useEffect(() => {
     if (phase !== 'hyperspace') return;
 
     stopEngineSound();
+    playHyperspaceWhoosh(); // Epic cinematic whoosh
     
     setTimeout(() => {
       setPhase('complete');
       onComplete();
     }, 1500);
-  }, [phase, onComplete, stopEngineSound]);
+  }, [phase, onComplete, stopEngineSound, playHyperspaceWhoosh]);
 
   const getShakeStyle = useCallback(() => {
     if (shakeIntensity === 0 || isPotatoMode) return {};
