@@ -166,41 +166,67 @@ const TypewriterText = ({ text, delay = 50 }: { text: string; delay?: number }) 
 // Full Screen Launch Animation Component
 const LaunchAnimation: React.FC<{ onComplete: () => void; isPotatoMode: boolean }> = ({ onComplete, isPotatoMode }) => {
   const [phase, setPhase] = useState<'launch' | 'success' | 'fadeout'>('launch');
+  const [isVisible, setIsVisible] = useState(true);
   const { playLaunchRumble, playHyperspaceWhoosh } = useAudio();
 
   useEffect(() => {
     // Play launch sound on mount
     if (!isPotatoMode) {
-      playLaunchRumble();
-      setTimeout(() => playHyperspaceWhoosh(), 800);
+      try {
+        playLaunchRumble();
+        setTimeout(() => playHyperspaceWhoosh(), 800);
+      } catch (e) {
+        console.log('Audio not available');
+      }
     }
 
     // Phase timing: launch -> success -> fadeout -> complete
     const successTimer = setTimeout(() => {
       setPhase('success');
-    }, isPotatoMode ? 800 : 2000);
+    }, isPotatoMode ? 600 : 1800);
 
     const fadeoutTimer = setTimeout(() => {
       setPhase('fadeout');
-    }, isPotatoMode ? 2000 : 4000);
+    }, isPotatoMode ? 1500 : 3500);
 
+    // Start fade out animation
+    const hideTimer = setTimeout(() => {
+      setIsVisible(false);
+    }, isPotatoMode ? 2000 : 4500);
+
+    // Call onComplete after animation is fully hidden
     const completeTimer = setTimeout(() => {
       onComplete();
     }, isPotatoMode ? 2500 : 5000);
 
+    // Safety fallback - force complete after max time
+    const safetyTimer = setTimeout(() => {
+      onComplete();
+    }, isPotatoMode ? 4000 : 7000);
+
     return () => {
       clearTimeout(successTimer);
       clearTimeout(fadeoutTimer);
+      clearTimeout(hideTimer);
       clearTimeout(completeTimer);
+      clearTimeout(safetyTimer);
     };
   }, [onComplete, isPotatoMode, playLaunchRumble, playHyperspaceWhoosh]);
+
+  // Don't render if not visible
+  if (!isVisible && phase === 'fadeout') {
+    return null;
+  }
 
   if (isPotatoMode) {
     // Simplified animation for potato mode
     return (
-      <div className={`fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 transition-opacity duration-500 ${phase === 'fadeout' ? 'opacity-0' : 'opacity-100'}`}>
+      <div 
+        className={`fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 transition-opacity duration-500 ${phase === 'fadeout' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        style={{ pointerEvents: phase === 'fadeout' ? 'none' : 'auto' }}
+      >
         <div className="text-center">
-          <div className="text-6xl mb-4">{phase === 'success' ? '✅' : '🚀'}</div>
+          <div className="text-6xl mb-4">{phase === 'success' || phase === 'fadeout' ? '✅' : '🚀'}</div>
           <div className="font-pixel text-primary text-lg">
             {phase === 'launch' ? 'Sending...' : 'Sent!'}
           </div>
@@ -210,8 +236,10 @@ const LaunchAnimation: React.FC<{ onComplete: () => void; isPotatoMode: boolean 
   }
 
   return (
-    <div className={`fixed inset-0 z-[9999] overflow-hidden transition-opacity duration-1000 ${phase === 'fadeout' ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Background with space gradient */}
+    <div 
+      className={`fixed inset-0 z-[9999] overflow-hidden transition-opacity duration-700 ${phase === 'fadeout' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+      style={{ pointerEvents: phase === 'fadeout' ? 'none' : 'auto' }}
+    >
       <div className="absolute inset-0 bg-gradient-to-b from-background via-[hsl(270,50%,5%)] to-background animate-pulse" />
       
       {/* Stars background */}
