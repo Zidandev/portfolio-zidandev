@@ -138,6 +138,81 @@ const translations: Translations = {
     en: 'Social Media',
     jp: 'ソーシャルメディア',
   },
+  contact: {
+    id: 'Kontak',
+    en: 'Contact',
+    jp: 'お問い合わせ',
+  },
+  contactDesc: {
+    id: 'Kirim pesan langsung ke Zidandev! Saya akan senang mendengar dari kamu.',
+    en: 'Send a message directly to Zidandev! I would love to hear from you.',
+    jp: 'Zidandevに直接メッセージを送信！ぜひご連絡ください。',
+  },
+  contactSubject: {
+    id: 'Judul',
+    en: 'Subject',
+    jp: '件名',
+  },
+  contactSubjectPlaceholder: {
+    id: 'Masukkan judul pesan...',
+    en: 'Enter message subject...',
+    jp: 'メッセージの件名を入力...',
+  },
+  contactEmail: {
+    id: 'Email Pengirim',
+    en: 'Your Email',
+    jp: 'あなたのメール',
+  },
+  contactEmailPlaceholder: {
+    id: 'email@contoh.com',
+    en: 'email@example.com',
+    jp: 'email@example.com',
+  },
+  contactMessage: {
+    id: 'Pesan',
+    en: 'Message',
+    jp: 'メッセージ',
+  },
+  contactMessagePlaceholder: {
+    id: 'Tulis pesanmu di sini...',
+    en: 'Write your message here...',
+    jp: 'ここにメッセージを書いてください...',
+  },
+  contactSend: {
+    id: 'LUNCURKAN PESAN',
+    en: 'LAUNCH MESSAGE',
+    jp: 'メッセージを送信',
+  },
+  contactSending: {
+    id: 'MELUNCURKAN...',
+    en: 'LAUNCHING...',
+    jp: '送信中...',
+  },
+  contactSent: {
+    id: 'PESAN TERKIRIM!',
+    en: 'MESSAGE SENT!',
+    jp: 'メッセージ送信完了！',
+  },
+  contactSuccess: {
+    id: 'Pesanmu berhasil diluncurkan ke luar angkasa! Zidandev akan segera membacanya.',
+    en: 'Your message has been launched into space! Zidandev will read it soon.',
+    jp: 'メッセージが宇宙に送信されました！Zidandevがすぐに読みます。',
+  },
+  contactError: {
+    id: 'Gagal mengirim pesan. Silakan coba lagi.',
+    en: 'Failed to send message. Please try again.',
+    jp: 'メッセージの送信に失敗しました。もう一度お試しください。',
+  },
+  contactFillAll: {
+    id: 'Mohon isi semua field.',
+    en: 'Please fill in all fields.',
+    jp: 'すべてのフィールドに入力してください。',
+  },
+  contactInvalidEmail: {
+    id: 'Format email tidak valid.',
+    en: 'Invalid email format.',
+    jp: 'メールの形式が無効です。',
+  },
   
   // About Me Content
   aboutMeDesc: {

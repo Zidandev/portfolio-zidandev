@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAudio } from '@/contexts/AudioContext';
 import { usePotatoMode } from '@/contexts/PotatoModeContext';
-import { X, ExternalLink, Play, Award, Github, Youtube, Instagram, ChevronRight, Sparkles, Zap, Code, Gamepad2, Globe, Star, Rocket, Terminal } from 'lucide-react';
+import { X, ExternalLink, Play, Award, Github, Youtube, Instagram, ChevronRight, Sparkles, Zap, Code, Gamepad2, Globe, Star, Rocket, Terminal, Send } from 'lucide-react';
 
 // Import images from src/assets
 import profileIcon from '@/assets/Icon_Zidane.png';
@@ -163,6 +163,498 @@ const TypewriterText = ({ text, delay = 50 }: { text: string; delay?: number }) 
   );
 };
 
+// Full Screen Launch Animation Component
+const LaunchAnimation: React.FC<{ onComplete: () => void; isPotatoMode: boolean }> = ({ onComplete, isPotatoMode }) => {
+  const [phase, setPhase] = useState<'launch' | 'success' | 'fadeout'>('launch');
+  const { playLaunchRumble, playHyperspaceWhoosh } = useAudio();
+
+  useEffect(() => {
+    // Play launch sound on mount
+    if (!isPotatoMode) {
+      playLaunchRumble();
+      setTimeout(() => playHyperspaceWhoosh(), 800);
+    }
+
+    // Phase timing: launch -> success -> fadeout -> complete
+    const successTimer = setTimeout(() => {
+      setPhase('success');
+    }, isPotatoMode ? 800 : 2000);
+
+    const fadeoutTimer = setTimeout(() => {
+      setPhase('fadeout');
+    }, isPotatoMode ? 2000 : 4000);
+
+    const completeTimer = setTimeout(() => {
+      onComplete();
+    }, isPotatoMode ? 2500 : 5000);
+
+    return () => {
+      clearTimeout(successTimer);
+      clearTimeout(fadeoutTimer);
+      clearTimeout(completeTimer);
+    };
+  }, [onComplete, isPotatoMode, playLaunchRumble, playHyperspaceWhoosh]);
+
+  if (isPotatoMode) {
+    // Simplified animation for potato mode
+    return (
+      <div className={`fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 transition-opacity duration-500 ${phase === 'fadeout' ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="text-center">
+          <div className="text-6xl mb-4">{phase === 'success' ? '✅' : '🚀'}</div>
+          <div className="font-pixel text-primary text-lg">
+            {phase === 'launch' ? 'Sending...' : 'Sent!'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`fixed inset-0 z-[9999] overflow-hidden transition-opacity duration-1000 ${phase === 'fadeout' ? 'opacity-0' : 'opacity-100'}`}>
+      {/* Background with space gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-[hsl(270,50%,5%)] to-background animate-pulse" />
+      
+      {/* Stars background */}
+      <div className="absolute inset-0">
+        {[...Array(50)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              opacity: Math.random() * 0.8 + 0.2,
+              animation: `twinkle ${1 + Math.random() * 2}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Speed lines - only during launch phase */}
+      {phase === 'launch' && (
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute bg-gradient-to-b from-primary via-primary to-transparent"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: '-20%',
+                width: '2px',
+                height: `${50 + Math.random() * 100}px`,
+                opacity: 0,
+                animation: `speedLine 0.8s ease-out ${i * 0.05}s forwards`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      
+      {/* Central rocket - during launch phase */}
+      {phase === 'launch' && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative" style={{ animation: 'rocketLaunch 2s ease-in forwards' }}>
+            {/* Rocket trail/exhaust */}
+            <div className="absolute left-1/2 top-full -translate-x-1/2">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute -translate-x-1/2"
+                  style={{
+                    width: `${20 - i * 2}px`,
+                    height: `${40 + i * 15}px`,
+                    background: `linear-gradient(to bottom, 
+                      ${i % 2 === 0 ? 'hsl(var(--primary))' : 'hsl(var(--secondary))'}, 
+                      ${i % 2 === 0 ? 'hsl(var(--accent))' : 'hsl(var(--primary))'}, 
+                      transparent)`,
+                    borderRadius: '50%',
+                    filter: `blur(${2 + i}px)`,
+                    animation: `exhaustFlame 0.15s ease-in-out ${i * 0.02}s infinite alternate`,
+                    left: '50%',
+                    top: `${i * 5}px`,
+                  }}
+                />
+              ))}
+            </div>
+            
+            {/* Rocket emoji with glow */}
+            <div className="text-8xl relative" style={{ filter: 'drop-shadow(0 0 30px hsl(var(--primary)))' }}>
+              🚀
+            </div>
+            
+            {/* Particle burst on launch */}
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute left-1/2 top-1/2 w-3 h-3 rounded-full"
+                style={{
+                  background: i % 2 === 0 ? 'hsl(var(--primary))' : 'hsl(var(--secondary))',
+                  animation: `particleBurst 1s ease-out ${0.5 + i * 0.05}s forwards`,
+                  transform: `rotate(${i * 30}deg) translateY(0)`,
+                  opacity: 0,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Success content - during success & fadeout phase */}
+      {(phase === 'success' || phase === 'fadeout') && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center animate-scale-in">
+            {/* Success checkmark with glow */}
+            <div className="relative inline-block mb-6">
+              <div className="text-8xl" style={{ filter: 'drop-shadow(0 0 40px hsl(var(--nexus-green)))' }}>
+                ✅
+              </div>
+              {/* Ripple effect */}
+              <div className="absolute inset-0 -m-8">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute inset-0 rounded-full border-2 border-green-400/50"
+                    style={{
+                      animation: `ripple 2s ease-out ${i * 0.4}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="font-pixel text-3xl text-primary neon-text mb-4">
+              TRANSMISSION SENT
+            </div>
+            <div className="font-orbitron text-muted-foreground text-lg tracking-widest mb-8">
+              Message launched into the cosmos
+            </div>
+            
+            {/* Success particles */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {[...Array(20)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-2 h-2 rounded-full"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    bottom: '0',
+                    background: i % 3 === 0 ? 'hsl(var(--primary))' : i % 3 === 1 ? 'hsl(var(--secondary))' : 'hsl(var(--nexus-green))',
+                    animation: `floatUp ${2 + Math.random() * 2}s ease-out ${Math.random() * 1}s infinite`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Scanlines overlay */}
+      <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,255,0.02)_2px,rgba(0,255,255,0.02)_4px)]" />
+      
+      {/* Flash effect on launch */}
+      {phase === 'launch' && (
+        <div 
+          className="absolute inset-0 bg-primary pointer-events-none"
+          style={{ animation: 'flashEffect 0.3s ease-out 0.2s forwards', opacity: 0 }}
+        />
+      )}
+      
+      <style>{`
+        @keyframes speedLine {
+          0% { top: -20%; opacity: 0; }
+          20% { opacity: 1; }
+          100% { top: 120%; opacity: 0; }
+        }
+        
+        @keyframes rocketLaunch {
+          0% { transform: translateY(0) scale(1); }
+          20% { transform: translateY(20px) scale(1.1); }
+          100% { transform: translateY(-150vh) scale(0.3); }
+        }
+        
+        @keyframes exhaustFlame {
+          0% { transform: translateX(-50%) scaleY(1) scaleX(1); }
+          100% { transform: translateX(-50%) scaleY(1.2) scaleX(0.8); }
+        }
+        
+        @keyframes particleBurst {
+          0% { transform: rotate(var(--rotation, 0deg)) translateY(0); opacity: 1; }
+          100% { transform: rotate(var(--rotation, 0deg)) translateY(-200px); opacity: 0; }
+        }
+        
+        @keyframes flashEffect {
+          0% { opacity: 0.8; }
+          100% { opacity: 0; }
+        }
+        
+        @keyframes ripple {
+          0% { transform: scale(0.8); opacity: 1; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        
+        @keyframes floatUp {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// Inline Contact Form Component
+const ContactFormInline: React.FC = () => {
+  const { t } = useLanguage();
+  const { isPotatoMode } = usePotatoMode();
+  const { playClickSound } = useAudio();
+  
+  const [subject, setSubject] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showLaunchAnimation, setShowLaunchAnimation] = useState(false);
+  
+  // Animated text states
+  const [displayedSubject, setDisplayedSubject] = useState('');
+  const [displayedEmail, setDisplayedEmail] = useState('');
+  const [displayedMessage, setDisplayedMessage] = useState('');
+  
+  // Typewriter effect for non-potato mode
+  useEffect(() => {
+    if (isPotatoMode) {
+      setDisplayedSubject(subject);
+      return;
+    }
+    if (subject.length > displayedSubject.length) {
+      const timer = setTimeout(() => {
+        setDisplayedSubject(subject.slice(0, displayedSubject.length + 1));
+      }, 30);
+      return () => clearTimeout(timer);
+    } else if (subject.length < displayedSubject.length) {
+      setDisplayedSubject(subject);
+    }
+  }, [subject, displayedSubject, isPotatoMode]);
+  
+  useEffect(() => {
+    if (isPotatoMode) {
+      setDisplayedEmail(senderEmail);
+      return;
+    }
+    if (senderEmail.length > displayedEmail.length) {
+      const timer = setTimeout(() => {
+        setDisplayedEmail(senderEmail.slice(0, displayedEmail.length + 1));
+      }, 30);
+      return () => clearTimeout(timer);
+    } else if (senderEmail.length < displayedEmail.length) {
+      setDisplayedEmail(senderEmail);
+    }
+  }, [senderEmail, displayedEmail, isPotatoMode]);
+  
+  useEffect(() => {
+    if (isPotatoMode) {
+      setDisplayedMessage(message);
+      return;
+    }
+    if (message.length > displayedMessage.length) {
+      const timer = setTimeout(() => {
+        setDisplayedMessage(message.slice(0, displayedMessage.length + 1));
+      }, 15);
+      return () => clearTimeout(timer);
+    } else if (message.length < displayedMessage.length) {
+      setDisplayedMessage(message);
+    }
+  }, [message, displayedMessage, isPotatoMode]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playClickSound();
+    
+    if (!subject.trim() || !senderEmail.trim() || !message.trim()) {
+      setErrorMessage(t('contactFillAll'));
+      setSubmitStatus('error');
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(senderEmail)) {
+      setErrorMessage(t('contactInvalidEmail'));
+      setSubmitStatus('error');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+    setErrorMessage('');
+    setShowLaunchAnimation(true);
+    
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('send-contact-email', {
+        body: { subject, senderEmail, message }
+      });
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        setSubmitStatus('success');
+        setTimeout(() => {
+          setSubject('');
+          setSenderEmail('');
+          setMessage('');
+          setDisplayedSubject('');
+          setDisplayedEmail('');
+          setDisplayedMessage('');
+        }, 2000);
+      } else {
+        throw new Error(data.error || 'Failed to send message');
+      }
+    } catch (error: any) {
+      console.error('Error sending contact email:', error);
+      setErrorMessage(error.message || t('contactError'));
+      setSubmitStatus('error');
+      setShowLaunchAnimation(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLaunchComplete = () => {
+    setShowLaunchAnimation(false);
+  };
+  
+  return (
+    <>
+      {showLaunchAnimation && (
+        <LaunchAnimation onComplete={handleLaunchComplete} isPotatoMode={isPotatoMode} />
+      )}
+      
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+        {/* Subject */}
+        <div>
+          <label className="block text-xs font-pixel text-primary mb-2">
+            {t('contactSubject')}
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full bg-background/50 border border-primary/30 rounded-lg px-4 py-3 font-orbitron text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all"
+              placeholder={t('contactSubjectPlaceholder')}
+              maxLength={100}
+            />
+            {!isPotatoMode && displayedSubject !== subject && (
+              <div className="absolute inset-0 pointer-events-none px-4 py-3 font-orbitron text-foreground overflow-hidden">
+                {displayedSubject}
+                <span className="animate-pulse text-primary">|</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Email */}
+        <div>
+          <label className="block text-xs font-pixel text-primary mb-2">
+            {t('contactEmail')}
+          </label>
+          <div className="relative">
+            <input
+              type="email"
+              value={senderEmail}
+              onChange={(e) => setSenderEmail(e.target.value)}
+              className="w-full bg-background/50 border border-primary/30 rounded-lg px-4 py-3 font-orbitron text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all"
+              placeholder={t('contactEmailPlaceholder')}
+              maxLength={255}
+            />
+            {!isPotatoMode && displayedEmail !== senderEmail && (
+              <div className="absolute inset-0 pointer-events-none px-4 py-3 font-orbitron text-foreground overflow-hidden">
+                {displayedEmail}
+                <span className="animate-pulse text-primary">|</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Message */}
+        <div>
+          <label className="block text-xs font-pixel text-primary mb-2">
+            {t('contactMessage')}
+          </label>
+          <div className="relative">
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full h-32 bg-background/50 border border-primary/30 rounded-lg px-4 py-3 font-orbitron text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all resize-none"
+              placeholder={t('contactMessagePlaceholder')}
+              maxLength={1000}
+            />
+            {!isPotatoMode && displayedMessage !== message && (
+              <div className="absolute inset-0 pointer-events-none px-4 py-3 font-orbitron text-foreground overflow-hidden whitespace-pre-wrap">
+                {displayedMessage}
+                <span className="animate-pulse text-primary">|</span>
+              </div>
+            )}
+          </div>
+          <div className="text-right text-xs text-muted-foreground mt-1 font-orbitron">
+            {message.length}/1000
+          </div>
+        </div>
+        
+        {/* Error Message */}
+        {submitStatus === 'error' && (
+          <div className="text-destructive text-sm font-pixel bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+            ⚠️ {errorMessage}
+          </div>
+        )}
+        
+        {/* Success Message */}
+        {submitStatus === 'success' && (
+          <div className={`text-green-400 text-sm font-pixel bg-green-500/10 border border-green-500/30 rounded-lg p-3 ${
+            isPotatoMode ? '' : 'animate-fade-in'
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className={isPotatoMode ? '' : 'animate-bounce'}>🚀</span>
+              {t('contactSuccess')}
+            </div>
+          </div>
+        )}
+        
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isSubmitting || submitStatus === 'success'}
+          className={`w-full py-4 rounded-lg font-pixel text-sm relative overflow-hidden transition-all duration-300 ${
+            isSubmitting 
+              ? 'bg-primary/50 cursor-not-allowed' 
+              : submitStatus === 'success'
+              ? 'bg-green-500/20 border-2 border-green-500 text-green-400'
+              : 'bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-primary-foreground shadow-lg hover:shadow-primary/30 hover:scale-105'
+          }`}
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className={isPotatoMode ? '' : 'animate-spin'}>⚙️</span>
+              {t('contactSending')}
+            </span>
+          ) : submitStatus === 'success' ? (
+            <span className="flex items-center justify-center gap-2">
+              <span>✓</span>
+              {t('contactSent')}
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <Send className="w-4 h-4" />
+              {t('contactSend')}
+            </span>
+          )}
+        </button>
+      </form>
+    </>
+  );
+};
+
 const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => {
   const { t } = useLanguage();
   const { playClickSound, playHoverSound } = useAudio();
@@ -239,6 +731,8 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
             { title: 'itch.io', description: t('itchio'), url: 'https://zidandev.itch.io/', type: 'social' },
           ],
         };
+      case 'contact':
+        return { title: t('contact'), items: [] };
       default:
         return { title: '', items: [] };
     }
@@ -651,6 +1145,23 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
                   </a>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* CONTACT - Form */}
+          {contentType === 'contact' && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 mb-4">
+                  <Send className="w-8 h-8 text-background" />
+                </div>
+                <p className="font-orbitron text-sm text-muted-foreground">
+                  {t('contactDesc')}
+                </p>
+              </div>
+              
+              {/* Inline Contact Form */}
+              <ContactFormInline />
             </div>
           )}
         </div>

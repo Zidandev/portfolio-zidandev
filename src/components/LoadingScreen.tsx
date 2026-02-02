@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePotatoMode } from '@/contexts/PotatoModeContext';
+import { useAudio } from '@/contexts/AudioContext';
 
 interface LoadingScreenProps {
   onComplete: () => void;
@@ -9,8 +10,11 @@ interface LoadingScreenProps {
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
   const { t } = useLanguage();
   const { isPotatoMode } = usePotatoMode();
+  const { playLaunchRumble, playHyperspaceWhoosh, playCountdownBeep } = useAudio();
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
+  const soundPlayedRef = useRef(false);
+  const launchSoundPlayedRef = useRef(false);
 
   const statusMessages = [
     'Connecting to Nexus...',
@@ -21,13 +25,42 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
     'Ready for launch!',
   ];
 
+  // Play countdown beeps during loading
+  useEffect(() => {
+    if (progress >= 20 && progress < 40 && !soundPlayedRef.current) {
+      playCountdownBeep(3);
+      soundPlayedRef.current = true;
+    } else if (progress >= 40 && progress < 60) {
+      soundPlayedRef.current = false;
+    } else if (progress >= 60 && progress < 80 && !soundPlayedRef.current) {
+      playCountdownBeep(2);
+      soundPlayedRef.current = true;
+    } else if (progress >= 80 && progress < 95) {
+      soundPlayedRef.current = false;
+    } else if (progress >= 95 && !soundPlayedRef.current) {
+      playCountdownBeep(1);
+      soundPlayedRef.current = true;
+    }
+  }, [progress, playCountdownBeep]);
+
+  // Play launch sounds when loading completes
+  useEffect(() => {
+    if (progress >= 100 && !launchSoundPlayedRef.current) {
+      launchSoundPlayedRef.current = true;
+      playLaunchRumble();
+      setTimeout(() => {
+        playHyperspaceWhoosh();
+      }, 300);
+    }
+  }, [progress, playLaunchRumble, playHyperspaceWhoosh]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
         const newProgress = prev + Math.random() * 15;
         if (newProgress >= 100) {
           clearInterval(interval);
-          setTimeout(onComplete, 500);
+          setTimeout(onComplete, 1500); // Delay to let launch sounds play
           return 100;
         }
         return newProgress;

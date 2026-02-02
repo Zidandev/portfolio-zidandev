@@ -46,6 +46,7 @@ const SpaceGame: React.FC<SpaceGameProps> = ({ onBack }) => {
     { id: 'web', x: 400, y: 100, contentType: 'web', label: t('webProjects'), color: 'hsl(270, 80%, 50%)' },
     { id: 'certificates', x: 0, y: 400, contentType: 'certificates', label: t('certificates'), color: 'hsl(150, 100%, 45%)' },
     { id: 'social', x: -200, y: -450, contentType: 'social', label: t('socialMedia'), color: 'hsl(200, 100%, 50%)' },
+    { id: 'contact', x: 450, y: -200, contentType: 'contact', label: t('contact'), color: 'hsl(45, 100%, 55%)' },
   ];
 
   useEffect(() => {
