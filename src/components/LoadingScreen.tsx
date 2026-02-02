@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePotatoMode } from '@/contexts/PotatoModeContext';
 import { useAudio } from '@/contexts/AudioContext';
@@ -10,9 +10,10 @@ interface LoadingScreenProps {
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
   const { t } = useLanguage();
   const { isPotatoMode } = usePotatoMode();
-  const { playLaunchRumble, playHyperspaceWhoosh, playCountdownBeep } = useAudio();
+  const { playLaunchRumble, playHyperspaceWhoosh, playCountdownBeep, initAudioOnInteraction, isAudioReady } = useAudio();
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
+  const [hasStarted, setHasStarted] = useState(false);
   const soundPlayedRef = useRef(false);
   const launchSoundPlayedRef = useRef(false);
 
@@ -25,8 +26,16 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
     'Ready for launch!',
   ];
 
+  // Handle initial click to start and init audio
+  const handleStart = useCallback(() => {
+    initAudioOnInteraction();
+    setHasStarted(true);
+  }, [initAudioOnInteraction]);
+
   // Play countdown beeps during loading
   useEffect(() => {
+    if (!hasStarted || !isAudioReady) return;
+    
     if (progress >= 20 && progress < 40 && !soundPlayedRef.current) {
       playCountdownBeep(3);
       soundPlayedRef.current = true;
@@ -41,10 +50,12 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
       playCountdownBeep(1);
       soundPlayedRef.current = true;
     }
-  }, [progress, playCountdownBeep]);
+  }, [progress, playCountdownBeep, hasStarted, isAudioReady]);
 
   // Play launch sounds when loading completes
   useEffect(() => {
+    if (!hasStarted || !isAudioReady) return;
+    
     if (progress >= 100 && !launchSoundPlayedRef.current) {
       launchSoundPlayedRef.current = true;
       playLaunchRumble();
@@ -52,9 +63,12 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
         playHyperspaceWhoosh();
       }, 300);
     }
-  }, [progress, playLaunchRumble, playHyperspaceWhoosh]);
+  }, [progress, playLaunchRumble, playHyperspaceWhoosh, hasStarted, isAudioReady]);
 
+  // Progress loading - only starts after user clicks
   useEffect(() => {
+    if (!hasStarted) return;
+    
     const interval = setInterval(() => {
       setProgress((prev) => {
         const newProgress = prev + Math.random() * 15;
@@ -68,7 +82,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
     }, 200);
 
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [onComplete, hasStarted]);
 
   useEffect(() => {
     const messageIndex = Math.min(
@@ -98,7 +112,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
         ))}
       </div>
 
-      {/* Main Loading Content */}
+      {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 px-4">
         {/* Logo/Title */}
         <div className="text-center">
@@ -110,57 +124,94 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
           </p>
         </div>
 
-        {/* Spinning Loader */}
-        <div className="relative w-32 h-32">
-          <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
-          <div 
-            className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"
-            style={{ animationDuration: '1s' }}
-          />
-          <div 
-            className="absolute inset-2 border-2 border-transparent border-b-secondary rounded-full animate-spin"
-            style={{ animationDuration: '1.5s', animationDirection: 'reverse' }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-pixel text-sm text-primary">
-              {Math.floor(progress)}%
-            </span>
+        {/* Pre-start: Launch Button */}
+        {!hasStarted ? (
+          <div className="flex flex-col items-center gap-6">
+            {/* Animated Launch Icon */}
+            <div className="relative w-32 h-32 flex items-center justify-center">
+              <div className={`absolute inset-0 border-4 border-primary/30 rounded-full ${isPotatoMode ? '' : 'animate-pulse'}`} />
+              <div className={`absolute inset-2 border-2 border-secondary/20 rounded-full ${isPotatoMode ? '' : 'animate-ping'}`} style={{ animationDuration: '2s' }} />
+              <div className="text-5xl" style={{ filter: isPotatoMode ? 'none' : 'drop-shadow(0 0 20px hsl(var(--primary)))' }}>
+                🚀
+              </div>
+            </div>
+            
+            {/* Launch Button */}
+            <button
+              onClick={handleStart}
+              className={`
+                relative px-12 py-4 font-pixel text-lg text-primary border-2 border-primary rounded-lg
+                transition-all duration-300 overflow-hidden group
+                hover:bg-primary hover:text-background hover:scale-105
+                ${isPotatoMode ? '' : 'hover:shadow-[0_0_30px_hsl(var(--primary)/0.5)]'}
+              `}
+            >
+              {/* Animated background */}
+              {!isPotatoMode && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              )}
+              <span className="relative z-10">▶ LAUNCH</span>
+            </button>
+            
+            <p className="font-orbitron text-xs text-muted-foreground text-center">
+              Click to initialize audio systems
+            </p>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Spinning Loader */}
+            <div className="relative w-32 h-32">
+              <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
+              <div 
+                className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"
+                style={{ animationDuration: '1s' }}
+              />
+              <div 
+                className="absolute inset-2 border-2 border-transparent border-b-secondary rounded-full animate-spin"
+                style={{ animationDuration: '1.5s', animationDirection: 'reverse' }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="font-pixel text-sm text-primary">
+                  {Math.floor(progress)}%
+                </span>
+              </div>
+            </div>
 
-        {/* Loading Bar */}
-        <div className="w-64 md:w-80">
-          <div className="loading-bar">
-            <div
-              className="loading-bar-fill transition-all duration-200"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
+            {/* Loading Bar */}
+            <div className="w-64 md:w-80">
+              <div className="loading-bar">
+                <div
+                  className="loading-bar-fill transition-all duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
 
-        {/* Status Text */}
-        <div className="text-center">
-          <p className="font-pixel text-xs text-primary/80 mb-2">
-            {t('loading')}
-          </p>
-          <p className="font-orbitron text-sm text-muted-foreground">
-            {statusText}
-          </p>
-        </div>
+            {/* Status Text */}
+            <div className="text-center">
+              <p className="font-pixel text-xs text-primary/80 mb-2">
+                {t('loading')}
+              </p>
+              <p className="font-orbitron text-sm text-muted-foreground">
+                {statusText}
+              </p>
+            </div>
 
-        {/* Decorative Elements */}
-        <div className="flex gap-2 mt-4">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="w-2 h-2 bg-primary rounded-full"
-              style={{
-                animation: 'star-pulse 0.5s ease-in-out infinite',
-                animationDelay: `${i * 0.1}s`,
-              }}
-            />
-          ))}
-        </div>
+            {/* Decorative Elements */}
+            <div className="flex gap-2 mt-4">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 bg-primary rounded-full"
+                  style={{
+                    animation: 'star-pulse 0.5s ease-in-out infinite',
+                    animationDelay: `${i * 0.1}s`,
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

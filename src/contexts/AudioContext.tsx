@@ -3,8 +3,10 @@ import React, { createContext, useContext, useRef, useState, useCallback, useEff
 interface AudioContextType {
   isMuted: boolean;
   volume: number;
+  isAudioReady: boolean;
   toggleMute: () => void;
   setVolume: (vol: number) => void;
+  initAudioOnInteraction: () => void;
   playHoverSound: () => void;
   playClickSound: () => void;
   playCollisionSound: () => void;
@@ -18,6 +20,7 @@ interface AudioContextType {
   playCountdownBeep: (number: number) => void;
   playLaunchRumble: () => void;
   playHyperspaceWhoosh: () => void;
+  playSuccessChime: () => void;
 }
 
 const AudioCtx = createContext<AudioContextType | undefined>(undefined);
@@ -115,7 +118,12 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isInitialized, volume]);
 
-  // Initialize on first user interaction
+  // Expose init function for manual triggering
+  const initAudioOnInteraction = useCallback(() => {
+    initAudio();
+  }, [initAudio]);
+
+  // Auto-init on first user interaction - but also expose for manual init
   useEffect(() => {
     const handleInteraction = () => {
       initAudio();
@@ -770,12 +778,84 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 600);
   }, [isMuted, volume]);
 
+  // Success chime - short, satisfying completion sound
+  const playSuccessChime = useCallback(() => {
+    if (!webAudioContextRef.current || isMuted) return;
+    const ctx = webAudioContextRef.current;
+    
+    // Main success chord - C major triad with sparkle
+    const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    
+    frequencies.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      const startTime = ctx.currentTime + i * 0.03;
+      const initialGain = 0.12 * volume * (1 - i * 0.15);
+      
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(initialGain, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(initialGain * 0.3, startTime + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(startTime);
+      osc.stop(startTime + 0.45);
+    });
+    
+    // Add sparkle/twinkle effect
+    const sparkleFreqs = [1567.98, 2093.00, 2637.02]; // G6, C7, E7
+    sparkleFreqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      const startTime = ctx.currentTime + 0.1 + i * 0.04;
+      
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.06 * volume, startTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.2);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(startTime);
+      osc.stop(startTime + 0.25);
+    });
+    
+    // Subtle sub-bass for weight
+    const subOsc = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    
+    subOsc.type = 'sine';
+    subOsc.frequency.value = 130.81; // C3
+    
+    subGain.gain.setValueAtTime(0, ctx.currentTime);
+    subGain.gain.linearRampToValueAtTime(0.15 * volume, ctx.currentTime + 0.02);
+    subGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    
+    subOsc.connect(subGain);
+    subGain.connect(ctx.destination);
+    
+    subOsc.start();
+    subOsc.stop(ctx.currentTime + 0.3);
+  }, [isMuted, volume]);
+
   return (
     <AudioCtx.Provider value={{
       isMuted,
       volume,
+      isAudioReady: isInitialized,
       toggleMute,
       setVolume,
+      initAudioOnInteraction,
       playHoverSound,
       playClickSound,
       playCollisionSound,
@@ -789,6 +869,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       playCountdownBeep,
       playLaunchRumble,
       playHyperspaceWhoosh,
+      playSuccessChime,
     }}>
       {children}
     </AudioCtx.Provider>

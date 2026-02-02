@@ -163,72 +163,71 @@ const TypewriterText = ({ text, delay = 50 }: { text: string; delay?: number }) 
   );
 };
 
-// Full Screen Launch Animation Component
+// Epic Panel Notification Component
 const LaunchAnimation: React.FC<{ onComplete: () => void; isPotatoMode: boolean }> = ({ onComplete, isPotatoMode }) => {
-  const [phase, setPhase] = useState<'launch' | 'success' | 'fadeout'>('launch');
-  const [isVisible, setIsVisible] = useState(true);
-  const { playLaunchRumble, playHyperspaceWhoosh } = useAudio();
+  const [phase, setPhase] = useState<'enter' | 'success' | 'exit'>('enter');
+  const { playClickSound, playSuccessChime } = useAudio();
 
   useEffect(() => {
-    // Play launch sound on mount
+    // Play subtle sending sound on enter
     if (!isPotatoMode) {
       try {
-        playLaunchRumble();
-        setTimeout(() => playHyperspaceWhoosh(), 800);
+        playClickSound();
       } catch (e) {
         console.log('Audio not available');
       }
     }
 
-    // Phase timing: launch -> success -> fadeout -> complete
+    // Phase timing: enter -> success -> exit -> complete
     const successTimer = setTimeout(() => {
       setPhase('success');
-    }, isPotatoMode ? 600 : 1800);
+      // Play satisfying success chime
+      try {
+        playSuccessChime();
+      } catch (e) {
+        console.log('Audio not available');
+      }
+    }, isPotatoMode ? 400 : 800);
 
-    const fadeoutTimer = setTimeout(() => {
-      setPhase('fadeout');
-    }, isPotatoMode ? 1500 : 3500);
+    const exitTimer = setTimeout(() => {
+      setPhase('exit');
+    }, isPotatoMode ? 1800 : 2800);
 
-    // Start fade out animation
-    const hideTimer = setTimeout(() => {
-      setIsVisible(false);
-    }, isPotatoMode ? 2000 : 4500);
-
-    // Call onComplete after animation is fully hidden
     const completeTimer = setTimeout(() => {
       onComplete();
-    }, isPotatoMode ? 2500 : 5000);
-
-    // Safety fallback - force complete after max time
-    const safetyTimer = setTimeout(() => {
-      onComplete();
-    }, isPotatoMode ? 4000 : 7000);
+    }, isPotatoMode ? 2300 : 3500);
 
     return () => {
       clearTimeout(successTimer);
-      clearTimeout(fadeoutTimer);
-      clearTimeout(hideTimer);
+      clearTimeout(exitTimer);
       clearTimeout(completeTimer);
-      clearTimeout(safetyTimer);
     };
-  }, [onComplete, isPotatoMode, playLaunchRumble, playHyperspaceWhoosh]);
+  }, [onComplete, isPotatoMode, playClickSound, playSuccessChime]);
 
-  // Don't render if not visible
-  if (!isVisible && phase === 'fadeout') {
-    return null;
-  }
+  const getAnimationClass = () => {
+    switch (phase) {
+      case 'enter':
+        return 'animate-[panelSlideIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)_forwards]';
+      case 'success':
+        return 'animate-[panelPulse_0.4s_ease-in-out]';
+      case 'exit':
+        return 'animate-[panelSlideOut_0.5s_cubic-bezier(0.36,0,0.66,-0.56)_forwards]';
+      default:
+        return '';
+    }
+  };
 
   if (isPotatoMode) {
-    // Simplified animation for potato mode
     return (
-      <div 
-        className={`fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 transition-opacity duration-500 ${phase === 'fadeout' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-        style={{ pointerEvents: phase === 'fadeout' ? 'none' : 'auto' }}
-      >
-        <div className="text-center">
-          <div className="text-6xl mb-4">{phase === 'success' || phase === 'fadeout' ? '✅' : '🚀'}</div>
-          <div className="font-pixel text-primary text-lg">
-            {phase === 'launch' ? 'Sending...' : 'Sent!'}
+      <div className="fixed inset-x-0 top-20 z-[100] flex justify-center pointer-events-none px-4">
+        <div 
+          className={`bg-background/95 border-2 border-primary rounded-lg px-8 py-4 shadow-lg ${getAnimationClass()}`}
+        >
+          <div className="flex items-center gap-4">
+            <div className="text-3xl">{phase === 'enter' ? '🚀' : '✅'}</div>
+            <div className="font-pixel text-primary">
+              {phase === 'enter' ? 'Sending...' : 'Sent!'}
+            </div>
           </div>
         </div>
       </div>
@@ -236,194 +235,209 @@ const LaunchAnimation: React.FC<{ onComplete: () => void; isPotatoMode: boolean 
   }
 
   return (
-    <div 
-      className={`fixed inset-0 z-[9999] overflow-hidden transition-opacity duration-700 ${phase === 'fadeout' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-      style={{ pointerEvents: phase === 'fadeout' ? 'none' : 'auto' }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-[hsl(270,50%,5%)] to-background animate-pulse" />
-      
-      {/* Stars background */}
-      <div className="absolute inset-0">
-        {[...Array(50)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              opacity: Math.random() * 0.8 + 0.2,
-              animation: `twinkle ${1 + Math.random() * 2}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 2}s`,
-            }}
-          />
-        ))}
-      </div>
-      
-      {/* Speed lines - only during launch phase */}
-      {phase === 'launch' && (
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(30)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute bg-gradient-to-b from-primary via-primary to-transparent"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: '-20%',
-                width: '2px',
-                height: `${50 + Math.random() * 100}px`,
-                opacity: 0,
-                animation: `speedLine 0.8s ease-out ${i * 0.05}s forwards`,
-              }}
-            />
-          ))}
-        </div>
-      )}
-      
-      {/* Central rocket - during launch phase */}
-      {phase === 'launch' && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative" style={{ animation: 'rocketLaunch 2s ease-in forwards' }}>
-            {/* Rocket trail/exhaust */}
-            <div className="absolute left-1/2 top-full -translate-x-1/2">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute -translate-x-1/2"
-                  style={{
-                    width: `${20 - i * 2}px`,
-                    height: `${40 + i * 15}px`,
-                    background: `linear-gradient(to bottom, 
-                      ${i % 2 === 0 ? 'hsl(var(--primary))' : 'hsl(var(--secondary))'}, 
-                      ${i % 2 === 0 ? 'hsl(var(--accent))' : 'hsl(var(--primary))'}, 
-                      transparent)`,
-                    borderRadius: '50%',
-                    filter: `blur(${2 + i}px)`,
-                    animation: `exhaustFlame 0.15s ease-in-out ${i * 0.02}s infinite alternate`,
-                    left: '50%',
-                    top: `${i * 5}px`,
-                  }}
-                />
-              ))}
-            </div>
-            
-            {/* Rocket emoji with glow */}
-            <div className="text-8xl relative" style={{ filter: 'drop-shadow(0 0 30px hsl(var(--primary)))' }}>
-              🚀
-            </div>
-            
-            {/* Particle burst on launch */}
-            {[...Array(12)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute left-1/2 top-1/2 w-3 h-3 rounded-full"
-                style={{
-                  background: i % 2 === 0 ? 'hsl(var(--primary))' : 'hsl(var(--secondary))',
-                  animation: `particleBurst 1s ease-out ${0.5 + i * 0.05}s forwards`,
-                  transform: `rotate(${i * 30}deg) translateY(0)`,
-                  opacity: 0,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Success content - during success & fadeout phase */}
-      {(phase === 'success' || phase === 'fadeout') && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center animate-scale-in">
-            {/* Success checkmark with glow */}
-            <div className="relative inline-block mb-6">
-              <div className="text-8xl" style={{ filter: 'drop-shadow(0 0 40px hsl(var(--nexus-green)))' }}>
-                ✅
-              </div>
-              {/* Ripple effect */}
-              <div className="absolute inset-0 -m-8">
-                {[...Array(3)].map((_, i) => (
+    <div className="fixed inset-x-0 top-16 z-[100] flex justify-center pointer-events-none px-4">
+      <div 
+        className={`relative overflow-hidden rounded-2xl border border-primary/50 backdrop-blur-md ${getAnimationClass()}`}
+        style={{
+          background: 'linear-gradient(135deg, hsl(var(--background) / 0.95) 0%, hsl(270, 50%, 8% / 0.95) 50%, hsl(var(--background) / 0.95) 100%)',
+          boxShadow: phase === 'success' 
+            ? '0 0 60px hsl(var(--primary) / 0.5), 0 0 120px hsl(var(--primary) / 0.2), 0 20px 60px -20px rgba(0,0,0,0.5)' 
+            : '0 0 30px hsl(var(--primary) / 0.3), 0 20px 60px -20px rgba(0,0,0,0.5)',
+          transition: 'box-shadow 0.3s ease',
+        }}
+      >
+        {/* Animated gradient border */}
+        <div 
+          className="absolute inset-0 rounded-2xl opacity-60"
+          style={{
+            background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.4), hsl(var(--secondary) / 0.3), transparent)',
+            animation: 'shimmerBorder 2s infinite linear',
+          }}
+        />
+        
+        {/* Inner glow */}
+        <div className="absolute inset-[1px] rounded-2xl bg-gradient-to-b from-primary/10 to-transparent" />
+        
+        {/* Content */}
+        <div className="relative px-10 py-6 flex items-center gap-8">
+          {/* Animated icon container */}
+          <div className="relative flex-shrink-0">
+            {phase === 'enter' ? (
+              <div className="relative">
+                {/* Rocket with trail */}
+                <div className="text-5xl" style={{ 
+                  animation: 'rocketShake 0.15s ease-in-out infinite',
+                  filter: 'drop-shadow(0 0 15px hsl(var(--primary)))'
+                }}>
+                  🚀
+                </div>
+                {/* Engine exhaust */}
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
+                  <div 
+                    className="w-4 h-8 rounded-full blur-sm"
+                    style={{
+                      background: 'linear-gradient(to bottom, hsl(35, 100%, 55%), hsl(var(--primary)), transparent)',
+                      animation: 'exhaustFlame 0.1s ease-in-out infinite alternate',
+                    }}
+                  />
+                </div>
+                {/* Speed particles */}
+                {[...Array(6)].map((_, i) => (
                   <div
                     key={i}
-                    className="absolute inset-0 rounded-full border-2 border-green-400/50"
+                    className="absolute w-1 h-4 bg-gradient-to-t from-primary to-transparent rounded-full"
                     style={{
-                      animation: `ripple 2s ease-out ${i * 0.4}s infinite`,
+                      left: `${10 + i * 8}px`,
+                      bottom: '-20px',
+                      animation: `speedParticle 0.4s ease-out ${i * 0.05}s infinite`,
+                      opacity: 0.7,
                     }}
                   />
                 ))}
               </div>
+            ) : (
+              <div className="relative">
+                {/* Success checkmark with burst */}
+                <div className="text-5xl" style={{ 
+                  animation: 'successPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  filter: 'drop-shadow(0 0 20px hsl(150, 100%, 45%))'
+                }}>
+                  ✨
+                </div>
+                {/* Ripple rings */}
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute inset-0 -m-4 rounded-full border-2 border-green-400/40"
+                    style={{
+                      animation: `rippleOut 1s ease-out ${i * 0.15}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Text content */}
+          <div className="flex-1">
+            <div 
+              className="font-pixel text-xl text-primary tracking-wider"
+              style={{
+                textShadow: phase === 'success' 
+                  ? '0 0 15px hsl(var(--primary)), 0 0 30px hsl(var(--primary) / 0.5)' 
+                  : '0 0 8px hsl(var(--primary) / 0.5)',
+                transition: 'text-shadow 0.3s ease',
+              }}
+            >
+              {phase === 'enter' ? '► TRANSMITTING...' : '✓ TRANSMISSION COMPLETE!'}
             </div>
-            
-            <div className="font-pixel text-3xl text-primary neon-text mb-4">
-              TRANSMISSION SENT
+            <div className="font-orbitron text-sm text-muted-foreground mt-1 tracking-wide">
+              {phase === 'enter' ? 'Launching message into the cosmos' : 'Your message has been delivered'}
             </div>
-            <div className="font-orbitron text-muted-foreground text-lg tracking-widest mb-8">
-              Message launched into the cosmos
-            </div>
-            
-            {/* Success particles */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {[...Array(20)].map((_, i) => (
+          </div>
+
+          {/* Decorative elements */}
+          {phase === 'success' && (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl">
+              {[...Array(12)].map((_, i) => (
                 <div
                   key={i}
-                  className="absolute w-2 h-2 rounded-full"
+                  className="absolute w-1.5 h-1.5 rounded-full"
                   style={{
-                    left: `${Math.random() * 100}%`,
-                    bottom: '0',
-                    background: i % 3 === 0 ? 'hsl(var(--primary))' : i % 3 === 1 ? 'hsl(var(--secondary))' : 'hsl(var(--nexus-green))',
-                    animation: `floatUp ${2 + Math.random() * 2}s ease-out ${Math.random() * 1}s infinite`,
+                    left: `${15 + Math.random() * 70}%`,
+                    top: `${15 + Math.random() * 70}%`,
+                    background: i % 3 === 0 ? 'hsl(var(--primary))' : i % 3 === 1 ? 'hsl(var(--secondary))' : 'hsl(150, 100%, 45%)',
+                    animation: `confettiBurst 0.8s ease-out ${i * 0.03}s forwards`,
+                    opacity: 0,
                   }}
                 />
               ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
+        
+        {/* Bottom progress bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/30 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-primary via-secondary to-primary"
+            style={{
+              animation: phase === 'enter' 
+                ? 'progressSlide 0.8s ease-out forwards' 
+                : 'progressComplete 0.3s ease-out forwards',
+              transformOrigin: 'left',
+            }}
+          />
+        </div>
+      </div>
       
-      {/* Scanlines overlay */}
-      <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,255,0.02)_2px,rgba(0,255,255,0.02)_4px)]" />
-      
-      {/* Flash effect on launch */}
-      {phase === 'launch' && (
-        <div 
-          className="absolute inset-0 bg-primary pointer-events-none"
-          style={{ animation: 'flashEffect 0.3s ease-out 0.2s forwards', opacity: 0 }}
-        />
-      )}
-      
+      {/* Global styles for animations */}
       <style>{`
-        @keyframes speedLine {
-          0% { top: -20%; opacity: 0; }
-          20% { opacity: 1; }
-          100% { top: 120%; opacity: 0; }
+        @keyframes panelSlideIn {
+          0% {
+            opacity: 0;
+            transform: translateY(-40px) scale(0.9);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
         }
-        
-        @keyframes rocketLaunch {
-          0% { transform: translateY(0) scale(1); }
-          20% { transform: translateY(20px) scale(1.1); }
-          100% { transform: translateY(-150vh) scale(0.3); }
+        @keyframes panelSlideOut {
+          0% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(-40px) scale(0.9);
+          }
         }
-        
+        @keyframes panelPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+        @keyframes shimmerBorder {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes rocketShake {
+          0%, 100% { transform: translateY(0) rotate(-2deg); }
+          50% { transform: translateY(-2px) rotate(2deg); }
+        }
         @keyframes exhaustFlame {
-          0% { transform: translateX(-50%) scaleY(1) scaleX(1); }
-          100% { transform: translateX(-50%) scaleY(1.2) scaleX(0.8); }
+          0% { transform: translateX(-50%) scaleY(1) scaleX(1); opacity: 1; }
+          100% { transform: translateX(-50%) scaleY(1.3) scaleX(0.7); opacity: 0.8; }
         }
-        
-        @keyframes particleBurst {
-          0% { transform: rotate(var(--rotation, 0deg)) translateY(0); opacity: 1; }
-          100% { transform: rotate(var(--rotation, 0deg)) translateY(-200px); opacity: 0; }
+        @keyframes speedParticle {
+          0% { transform: translateY(0); opacity: 0.7; }
+          100% { transform: translateY(15px); opacity: 0; }
         }
-        
-        @keyframes flashEffect {
-          0% { opacity: 0.8; }
-          100% { opacity: 0; }
+        @keyframes successPop {
+          0% { transform: scale(0); opacity: 0; }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); opacity: 1; }
         }
-        
-        @keyframes ripple {
-          0% { transform: scale(0.8); opacity: 1; }
-          100% { transform: scale(2.5); opacity: 0; }
+        @keyframes rippleOut {
+          0% { transform: scale(0.8); opacity: 0.8; }
+          100% { transform: scale(2); opacity: 0; }
         }
-        
-        @keyframes floatUp {
-          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        @keyframes confettiBurst {
+          0% { 
+            transform: translate(0, 0) scale(1); 
+            opacity: 1; 
+          }
+          100% { 
+            transform: translate(calc((var(--i, 1) - 6) * 15px), calc((var(--i, 1) - 6) * -20px)) scale(0); 
+            opacity: 0; 
+          }
+        }
+        @keyframes progressSlide {
+          0% { transform: scaleX(0); }
+          100% { transform: scaleX(1); }
+        }
+        @keyframes progressComplete {
+          0% { background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--primary))); }
+          100% { background: hsl(150, 100%, 45%); }
         }
       `}</style>
     </div>
