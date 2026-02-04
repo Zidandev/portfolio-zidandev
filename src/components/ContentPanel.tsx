@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAudio } from '@/contexts/AudioContext';
 import { usePotatoMode } from '@/contexts/PotatoModeContext';
-import { X, ExternalLink, Play, Award, Github, Youtube, Instagram, ChevronRight, Sparkles, Zap, Code, Gamepad2, Globe, Star, Rocket, Terminal, Send } from 'lucide-react';
+import { X, ExternalLink, Play, Award, Github, Youtube, Instagram, ChevronRight, Sparkles, Zap, Code, Gamepad2, Globe, Star, Rocket, Terminal, Send, MessageSquare } from 'lucide-react';
+import HangarBorder from './HangarBorder';
+import TestimonialsContent from './TestimonialsContent';
 
 // Import images from src/assets
 import profileIcon from '@/assets/Icon_Zidane.png';
@@ -775,6 +777,8 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
         };
       case 'contact':
         return { title: t('contact'), items: [] };
+      case 'testimonials':
+        return { title: t('testimonials'), items: [] };
       default:
         return { title: '', items: [] };
     }
@@ -821,22 +825,25 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 bg-background/90 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4">
-      <div 
-        className={`relative glass-panel rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border-2 border-primary/30 ${
-          isPotatoMode ? '' : 'shadow-[0_0_50px_hsl(var(--primary)/0.3)] vhs-panel-effect'
-        } ${
-          isEntering && !isPotatoMode ? 'animate-panel-enter' : ''
-        } ${showGlitch && !isPotatoMode ? 'animate-vhs-distort' : ''}`}
-      >
+    <div className="fixed inset-0 bg-background/90 backdrop-blur-md flex items-center justify-center z-50 p-4 md:p-8">
+      <HangarBorder>
+        <div 
+          className={`relative glass-panel rounded-2xl w-full max-w-4xl flex flex-col ${
+            isPotatoMode 
+              ? 'border-2 border-primary/50 max-h-[80vh]' 
+              : 'border-2 border-primary/30 shadow-[0_0_50px_hsl(var(--primary)/0.3)] vhs-panel-effect max-h-[78vh]'
+          } ${
+            isEntering && !isPotatoMode ? 'animate-panel-enter' : ''
+          } ${showGlitch && !isPotatoMode ? 'animate-vhs-distort' : ''}`}
+        >
         {/* VHS Glitch Overlay - skip in potato mode */}
         {!isPotatoMode && <VHSGlitchOverlay isActive={showGlitch} />}
         
         {/* Animated background - skip in potato mode */}
         {!isPotatoMode && <FloatingParticles />}
         
-        {/* Header with neon effect */}
-        <div className={`relative flex items-center justify-between p-4 md:p-6 border-b border-primary/30 ${isPotatoMode ? '' : 'bg-gradient-to-r from-primary/10 via-transparent to-secondary/10'}`}>
+        {/* Header with neon effect - fixed height */}
+        <div className={`relative flex-shrink-0 flex items-center justify-between p-4 md:p-6 border-b border-primary/30 ${isPotatoMode ? '' : 'bg-gradient-to-r from-primary/10 via-transparent to-secondary/10'}`}>
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full bg-primary ${isPotatoMode ? '' : 'animate-pulse shadow-[0_0_10px_hsl(var(--primary))]'}`} />
             <h2 
@@ -855,8 +862,8 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
           </button>
         </div>
 
-        {/* Content */}
-        <div className={`relative p-4 md:p-6 overflow-y-auto max-h-[calc(95vh-80px)] custom-scrollbar ${isEntering && !isPotatoMode ? 'animate-fade-in' : ''}`}>
+        {/* Content - scrollable area with proper height */}
+        <div className={`relative flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar ${isEntering && !isPotatoMode ? 'animate-fade-in' : ''}`}>
           
           {/* ABOUT ME - Redesigned */}
           {contentType === 'about' && (
@@ -1206,25 +1213,39 @@ const ContentPanel: React.FC<ContentPanelProps> = ({ contentType, onClose }) => 
               <ContactFormInline />
             </div>
           )}
-        </div>
-      </div>
 
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: hsl(var(--muted));
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: hsl(var(--primary) / 0.5);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: hsl(var(--primary));
-        }
-      `}</style>
+          {/* TESTIMONIALS */}
+          {contentType === 'testimonials' && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 mb-4 ${isPotatoMode ? '' : 'animate-pulse shadow-[0_0_30px_hsl(280,100%,60%/0.5)]'}`}>
+                  <MessageSquare className="w-8 h-8 text-background" />
+                </div>
+              </div>
+              
+              <TestimonialsContent />
+            </div>
+          )}
+        </div>
+
+        <style>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: hsl(var(--muted));
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: hsl(var(--primary) / 0.5);
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: hsl(var(--primary));
+          }
+        `}</style>
+        </div>
+      </HangarBorder>
     </div>
   );
 };

@@ -372,6 +372,113 @@ const translations: Translations = {
     en: 'Thank you for visiting!',
     jp: 'ご訪問ありがとうございます！',
   },
+  
+  // Testimonials
+  testimonials: {
+    id: 'Testimoni',
+    en: 'Testimonials',
+    jp: 'お客様の声',
+  },
+  testimonialsDesc: {
+    id: 'Lihat review dari orang-orang yang pernah bekerjasama dengan Zidandev, atau tulis testimonimu sendiri!',
+    en: 'See reviews from people who have worked with Zidandev, or write your own testimonial!',
+    jp: 'Zidandevと一緒に仕事をした人々のレビューを見るか、自分の感想を書いてください！',
+  },
+  testimonialsTabRead: {
+    id: 'LIHAT REVIEW',
+    en: 'VIEW REVIEWS',
+    jp: 'レビューを見る',
+  },
+  testimonialsTabWrite: {
+    id: 'TULIS REVIEW',
+    en: 'WRITE REVIEW',
+    jp: 'レビューを書く',
+  },
+  testimonialsName: {
+    id: 'Nama',
+    en: 'Name',
+    jp: '名前',
+  },
+  testimonialsNamePlaceholder: {
+    id: 'Masukkan nama kamu...',
+    en: 'Enter your name...',
+    jp: 'お名前を入力...',
+  },
+  testimonialsRating: {
+    id: 'Rating',
+    en: 'Rating',
+    jp: '評価',
+  },
+  testimonialsMessage: {
+    id: 'Pesan',
+    en: 'Message',
+    jp: 'メッセージ',
+  },
+  testimonialsMessagePlaceholder: {
+    id: 'Tulis pengalamanmu bekerja dengan Zidandev...',
+    en: 'Write about your experience working with Zidandev...',
+    jp: 'Zidandevとの仕事の経験について書いてください...',
+  },
+  testimonialsSubmit: {
+    id: 'KIRIM TESTIMONI',
+    en: 'SUBMIT TESTIMONIAL',
+    jp: 'レビューを送信',
+  },
+  testimonialsSending: {
+    id: 'MENGIRIM...',
+    en: 'SENDING...',
+    jp: '送信中...',
+  },
+  testimonialsSent: {
+    id: 'TERKIRIM!',
+    en: 'SENT!',
+    jp: '送信完了！',
+  },
+  testimonialsSuccess: {
+    id: 'Terima kasih! Testimonimu telah terkirim.',
+    en: 'Thank you! Your testimonial has been submitted.',
+    jp: 'ありがとうございます！レビューが送信されました。',
+  },
+  testimonialsError: {
+    id: 'Gagal mengirim testimoni. Silakan coba lagi.',
+    en: 'Failed to submit testimonial. Please try again.',
+    jp: 'レビューの送信に失敗しました。もう一度お試しください。',
+  },
+  testimonialsFillAll: {
+    id: 'Mohon isi nama dan pesan.',
+    en: 'Please fill in name and message.',
+    jp: '名前とメッセージを入力してください。',
+  },
+  testimonialsInvalidRating: {
+    id: 'Rating harus antara 1-5.',
+    en: 'Rating must be between 1-5.',
+    jp: '評価は1〜5の間でなければなりません。',
+  },
+  testimonialsLoading: {
+    id: 'Memuat testimoni...',
+    en: 'Loading testimonials...',
+    jp: 'レビューを読み込み中...',
+  },
+  testimonialsEmpty: {
+    id: 'Belum ada testimoni. Jadilah yang pertama!',
+    en: 'No testimonials yet. Be the first!',
+    jp: 'まだレビューがありません。最初の一人になりましょう！',
+  },
+  testimonialsBeFirst: {
+    id: 'TULIS TESTIMONI PERTAMA',
+    en: 'WRITE THE FIRST TESTIMONIAL',
+    jp: '最初のレビューを書く',
+  },
+  testimonialsTranslate: {
+    id: 'Terjemahkan',
+    en: 'Translate',
+    jp: '翻訳する',
+  },
+  testimonialsTranslating: {
+    id: 'Menerjemahkan...',
+    en: 'Translating...',
+    jp: '翻訳中...',
+  },
 };
 
 interface LanguageContextType {
