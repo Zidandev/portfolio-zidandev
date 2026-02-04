@@ -168,8 +168,9 @@ const WriteForm = ({
   const [rating, setRating] = useState(5);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error' | 'rate_limited'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   
   // Typewriter states
   const [displayedName, setDisplayedName] = useState('');
@@ -206,6 +207,28 @@ const WriteForm = ({
     }
   }, [message, displayedMessage, isPotatoMode]);
   
+  // Countdown timer effect
+  useEffect(() => {
+    if (cooldownSeconds <= 0) {
+      if (submitStatus === 'rate_limited') {
+        setSubmitStatus('idle');
+      }
+      return;
+    }
+    
+    const timer = setInterval(() => {
+      setCooldownSeconds(prev => {
+        if (prev <= 1) {
+          setSubmitStatus('idle');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [cooldownSeconds, submitStatus]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     playClickSound();
@@ -227,15 +250,28 @@ const WriteForm = ({
     setErrorMessage('');
     
     try {
-      const { error } = await supabase
-        .from('testimonials')
-        .insert({
+      const { data, error } = await supabase.functions.invoke('submit-testimonial', {
+        body: {
           name: name.trim(),
           rating,
           message: message.trim()
-        });
+        }
+      });
       
       if (error) throw error;
+      
+      // Check for rate limit or other errors in response
+      if (data?.error) {
+        if (data.error === 'rate_limited') {
+          setCooldownSeconds(data.retryAfter || 300);
+          setSubmitStatus('rate_limited');
+          return;
+        } else {
+          setErrorMessage(data.message || t('testimonialsError'));
+          setSubmitStatus('error');
+        }
+        return;
+      }
       
       setSubmitStatus('success');
       setTimeout(() => {
@@ -337,13 +373,32 @@ const WriteForm = ({
         </div>
       )}
       
+      {/* Rate Limited Countdown */}
+      {submitStatus === 'rate_limited' && (
+        <div className={`text-amber-400 text-sm font-pixel bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 ${
+          isPotatoMode ? '' : 'animate-fade-in'
+        }`}>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-2xl">⏳</span>
+            <p className="text-center">{t('testimonialsRateLimited')}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <div className={`text-3xl font-orbitron text-amber-300 ${isPotatoMode ? '' : 'animate-pulse'}`}>
+                {Math.floor(cooldownSeconds / 60).toString().padStart(2, '0')}:{(cooldownSeconds % 60).toString().padStart(2, '0')}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={isSubmitting || submitStatus === 'success'}
+        disabled={isSubmitting || submitStatus === 'success' || submitStatus === 'rate_limited'}
         className={`w-full py-4 rounded-lg font-pixel text-sm relative overflow-hidden transition-all duration-300 ${
           isSubmitting 
-            ? 'bg-primary/50 cursor-not-allowed' 
+            ? 'bg-primary/50 cursor-not-allowed'
+            : submitStatus === 'rate_limited'
+            ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 cursor-not-allowed'
             : submitStatus === 'success'
             ? 'bg-green-500/20 border-2 border-green-500 text-green-400'
             : 'bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-primary-foreground shadow-lg hover:shadow-primary/30 hover:scale-105'
@@ -353,6 +408,11 @@ const WriteForm = ({
           <span className="flex items-center justify-center gap-2">
             <span className={isPotatoMode ? '' : 'animate-spin'}>⚙️</span>
             {t('testimonialsSending')}
+          </span>
+        ) : submitStatus === 'rate_limited' ? (
+          <span className="flex items-center justify-center gap-2">
+            <span>⏳</span>
+            {t('testimonialsWait')} {Math.floor(cooldownSeconds / 60)}:{(cooldownSeconds % 60).toString().padStart(2, '0')}
           </span>
         ) : submitStatus === 'success' ? (
           <span className="flex items-center justify-center gap-2">

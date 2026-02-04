@@ -479,6 +479,16 @@ const translations: Translations = {
     en: 'Translating...',
     jp: '翻訳中...',
   },
+  testimonialsRateLimited: {
+    id: 'Terlalu banyak permintaan. Tunggu sebentar sebelum mengirim lagi.',
+    en: 'Too many requests. Please wait before submitting again.',
+    jp: 'リクエストが多すぎます。再送信する前にお待ちください。',
+  },
+  testimonialsWait: {
+    id: 'Tunggu',
+    en: 'Wait',
+    jp: '待機',
+  },
 };
 
 interface LanguageContextType {
